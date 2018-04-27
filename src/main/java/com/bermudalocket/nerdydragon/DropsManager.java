@@ -12,7 +12,7 @@ class DropsManager {
 
     /**
      * A mapping from the ItemStack of a custom drop to its drop rate
-     *
+     * <p>
      * f : ItemStack customDrop -> Double dropRate
      */
     private HashMap<ItemStack, Double> _customDrops = new HashMap<>();
@@ -21,8 +21,9 @@ class DropsManager {
 
     /**
      * Enters a new pair into the custom drop mapping
+     *
      * @param itemStack the ItemStack representation of this custom drop
-     * @param dropRate the drop rate for this custom drop
+     * @param dropRate  the drop rate for this custom drop
      */
     void loadNewItem(ItemStack itemStack, double dropRate) {
         _customDrops.put(itemStack, dropRate);
@@ -30,6 +31,7 @@ class DropsManager {
 
     /**
      * Runs a probability filter and returns drops
+     *
      * @return a set of random drops
      */
     Set<ItemStack> getRandomDrops() {
@@ -41,6 +43,7 @@ class DropsManager {
 
     /**
      * Returns a copy of the custom drops HashMap
+     *
      * @return a HashMap of all custom drops and their drop rates
      */
     HashMap<ItemStack, Double> getAllDropsInfo() {
@@ -49,6 +52,7 @@ class DropsManager {
 
     /**
      * Returns a Set of all custom drops *without drop rates*
+     *
      * @return a Set of all custom drops without their drop rates
      */
     Set<ItemStack> getAllDrops() {
@@ -58,6 +62,8 @@ class DropsManager {
     /**
      * Clears the current HashMap
      */
-    void clear() { _customDrops.clear(); }
+    void clear() {
+        _customDrops.clear();
+    }
 
 }
