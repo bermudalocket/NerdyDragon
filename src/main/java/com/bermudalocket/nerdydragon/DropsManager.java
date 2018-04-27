@@ -34,9 +34,30 @@ class DropsManager {
      */
     Set<ItemStack> getRandomDrops() {
         return _customDrops.entrySet().stream()
-                .filter(e -> e.getValue() <= _random.nextDouble())
+                .filter(e -> e.getValue() >= _random.nextDouble())
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }
+
+    /**
+     * Returns a copy of the custom drops HashMap
+     * @return a HashMap of all custom drops and their drop rates
+     */
+    HashMap<ItemStack, Double> getAllDropsInfo() {
+        return _customDrops;
+    }
+
+    /**
+     * Returns a Set of all custom drops *without drop rates*
+     * @return a Set of all custom drops without their drop rates
+     */
+    Set<ItemStack> getAllDrops() {
+        return _customDrops.keySet();
+    }
+
+    /**
+     * Clears the current HashMap
+     */
+    void clear() { _customDrops.clear(); }
 
 }

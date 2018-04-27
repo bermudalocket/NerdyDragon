@@ -1,0 +1,31 @@
+name: NerdyDragon
+version: 1.0
+author: bermudalocket
+main: com.bermudalocket.nerdydragon.NerdyDragon
+
+permissions:
+  nerdydragon.admin:
+    description: Full permissions
+    default: op
+
+commands:
+  nerdydragon-list:
+    description: Lists all of the currently loaded custom drops.
+    usage: /nerdydragon-list
+    permission: nerdydragon.admin
+    permission-message: You don't have permission to do that.
+  nerdydragon-peek:
+    description: Gives the command executor one copy of all currently loaded custom drops.
+    usage: /nerdydragon-peek
+    permission: nerdydragon.admin
+    permission-message: You don't have permission to do that.
+  nerdydragon-toggle:
+    description: Toggles the state (enabled/disabled) of the plugin's actions.
+    usage: /nerdydragon-toggle
+    permission: nerdydragon.admin
+    permission-message: You don't have permission to do that.
+  nerdydragon-reload:
+    description: Reloads the plugins configuration.
+    usage: /nerdydragon-reload
+    permission: nerdydragon.admin
+    permission-message: You don't have permission to do that.
