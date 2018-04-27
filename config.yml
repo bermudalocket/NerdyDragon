@@ -1,0 +1,12 @@
+default-world: WORLD_THE_END
+
+custom-drops:
+  - name: 'Essence of Flight'
+    material: GHAST_TEAR
+    name-color: AQUA
+    enchant: INFINITY
+    drop-rate: 1
+    drop-qty: 1
+    lore:
+      - 'Apparently you can fly if you make enough &2ghasts&r cry.'
+      - 'Who knew?'
