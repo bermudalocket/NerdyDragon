@@ -132,7 +132,7 @@ class Configuration {
             try {
                 dropRate = (Double) itemMap.get("drop-rate");
                 if (dropRate < 0 || dropRate > 1) throw new IllegalStateException();
-            } catch (NumberFormatException nFE) {
+            } catch (Exception e) {
                 logger.warning("Configuration error: drop rate " + dropRate + " is not a Double in [0.0, 1.0].");
                 continue;
             }
