@@ -9,9 +9,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.bermudalocket.nerdydragon.NerdyDragon.DROPS_MANAGER;
 
@@ -80,15 +84,29 @@ class Configuration {
             double dropRate;
             int dropQty;
 
+
+
+            // ---------------------------------------------------------------------
+            // name -> String
+            // (upon error, this custom-drop will be skipped)
+            // ---------------------------------------------------------------------
+            Optional<String> tryName = Optional.ofNullable(itemMap.get("name"))
+                                                .map(Object::toString)
+                                                .map(this::format);
+            if (!tryName.isPresent()) {
+                logger.warning("Configuration error: name (" + tryName.orElse("N/A") + " is invalid.");
+                continue;
+            }
+
             // ---------------------------------------------------------------------
             // material -> Material
             // (upon error, this custom-drop will be skipped)
             // ---------------------------------------------------------------------
-            String tryItemMaterial = (String) itemMap.get("material");
-            try {
-                material = Material.valueOf(tryItemMaterial);
-            } catch (Exception e) {
-                logger.warning("Configuration error: material (" + tryItemMaterial + ") is not a Material.");
+            Optional<Material> tryMaterial = Optional.ofNullable(itemMap.get("material"))
+                                                    .map(Object::toString)
+                                                    .map(Material::matchMaterial);
+            if (!tryMaterial.isPresent()) {
+                logger.warning("Configuration error: material for " + tryName + " is not a Material.");
                 continue;
             }
 
@@ -96,44 +114,35 @@ class Configuration {
             // drop-qty -> Integer
             // (upon error, this custom-drop will be skipped)
             // ---------------------------------------------------------------------
-            dropQty = 0;
+            Optional<Integer> tryQty = Optional.ofNullable(itemMap.get("drop-qty"))
+                                                .map(Object::toString)
+                                                .map(Integer::parseInt);
             try {
-                dropQty = (Integer) itemMap.get("drop-qty");
-                if (dropQty < 0) throw new IllegalStateException();
+                if (tryQty.orElseThrow(IllegalArgumentException::new) < 0) throw new IllegalStateException();
             } catch (Exception e) {
-                logger.warning("Configuration error: drop qty " + dropQty + " is not an integer.");
-                continue;
-            }
-
-            // ---------------------------------------------------------------------
-            // name-color -> ChatColor
-            // (upon error, this custom-drop will be skipped)
-            // ---------------------------------------------------------------------
-            String tryNameColor = (String) itemMap.get("name-color");
-            try {
-                itemName = String.format("%s%s%s", ChatColor.valueOf(tryNameColor), itemMap.get("name"), ChatColor.RESET);
-            } catch (Exception e) {
-                logger.warning("Configuration error: color " + tryNameColor + " is not a ChatColor.");
+                logger.warning("Configuration error: drop qty " + tryQty + " is not an integer.");
                 continue;
             }
 
             // ---------------------------------------------------------------------
             // enchant -> Enchantment
-            // (upon error, this custom-drop will default to NO enchantment)
+            // (upon error, this custom-drop will default to ARROW_INFINITE)
             // ---------------------------------------------------------------------
-            String tryEnchant = (String) itemMap.get("enchant");
-            enchantment = Enchantment.getByName(tryEnchant);
+            Optional<Enchantment> tryEnchant = Optional.ofNullable(itemMap.get("enchant"))
+                                                        .map(Object::toString)
+                                                        .map(Enchantment::getByName);
 
             // ---------------------------------------------------------------------
             // drop-rate -> Double
             // (upon error, this custom-drop will be skipped)
             // ---------------------------------------------------------------------
-            dropRate = 0d;
+            Optional<Double> tryRate = Optional.ofNullable(itemMap.get("drop-rate"))
+                                                .map(Object::toString)
+                                                .map(Double::parseDouble);
             try {
-                dropRate = (Double) itemMap.get("drop-rate");
-                if (dropRate < 0 || dropRate > 1) throw new IllegalStateException();
+                tryRate.filter(d -> d <= 1d && d >= 0d).orElseThrow(IllegalArgumentException::new);
             } catch (Exception e) {
-                logger.warning("Configuration error: drop rate " + dropRate + " is not a Double in [0.0, 1.0].");
+                logger.warning("Configuration error: drop rate " + tryRate + " is not a Double in [0.0, 1.0].");
                 continue;
             }
 
@@ -141,24 +150,26 @@ class Configuration {
             // lore -> List<String>
             // (this is a little iffy)
             // ---------------------------------------------------------------------
-            List<?> tryLore = (List<?>) itemMap.get("lore");
+            Optional<List<String>> tryLore = Optional.ofNullable(itemMap.get("lore"))
+                                                .map(Configuration::objToList);
+            tryLore.map(List::stream).map(s -> s.map(this::format)).map(s -> s.collect(Collectors.toList()));
 
-            // create the item stack and grab its item meta
-            ItemStack itemStack = new ItemStack(material, dropQty);
+            // ---------------------------------------------------------------------
+            // create the item stack
+            // ---------------------------------------------------------------------
+            ItemStack itemStack = new ItemStack(tryMaterial.get(), tryQty.get());
+
             ItemMeta itemMeta = itemStack.getItemMeta();
-
-            tryLore.stream().map(Object::toString).map(this::format).forEach(itemLore::add);
-            if (!itemLore.isEmpty()) itemMeta.setLore(itemLore);
-
-            itemMeta.setDisplayName(itemName);
-
+            itemMeta.setLore(tryLore.orElse(null));
+            itemMeta.setDisplayName(tryName.get());
             itemStack.setItemMeta(itemMeta);
 
-            if (enchantment != null) itemStack.addUnsafeEnchantment(enchantment, 1);
+            itemStack.addUnsafeEnchantment(tryEnchant.orElse(Enchantment.ARROW_INFINITE), 1);
 
             // send the item stack to the drops manager to be saved
-            DROPS_MANAGER.loadNewItem(itemStack, dropRate);
-            logger.info("Added " + itemName + " to drops list.");
+            DROPS_MANAGER.loadNewItem(itemStack, tryRate.get());
+            logger.info("Added " + tryName.get() + " to drops list.");
+            logger.info("Lore: " + tryLore.get());
 
         } // for custom-drop
 
@@ -172,6 +183,10 @@ class Configuration {
      */
     private String format(String string) {
         return ChatColor.translateAlternateColorCodes("&".charAt(0), string);
+    }
+
+    private static List<String> objToList(Object o) {
+        return (List<String>) o;
     }
 
 }
