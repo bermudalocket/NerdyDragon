@@ -139,7 +139,7 @@ class Configuration {
 
             // ---------------------------------------------------------------------
             // lore -> List<String>
-            // (this is a little fucky)
+            // (this is a little iffy)
             // ---------------------------------------------------------------------
             List<?> tryLore = (List<?>) itemMap.get("lore");
 
