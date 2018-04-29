@@ -1,3 +1,5 @@
+debug: FALSE
+
 default-world: WORLD_THE_END
 default-drop-search-radius: 4
 
@@ -6,7 +8,6 @@ upon-fail-drop-in-portal: TRUE
 custom-drops:
   - name: 'Essence of Flight'
     material: GHAST_TEAR
-    name-color: AQUA
     enchant: ARROW_INFINITE
     drop-rate: 1.0
     drop-qty: 1

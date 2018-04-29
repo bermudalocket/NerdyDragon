@@ -8,21 +8,21 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.bermudalocket.nerdydragon.NerdyDragon.DROPS_MANAGER;
+import static com.bermudalocket.nerdydragon.NerdyDragon.PLUGIN;
 
 /**
  * Handles the plugin configuration.
  */
 class Configuration {
+
+    static Boolean DEBUG;
 
     static World DEFAULT_WORLD;
 
@@ -34,13 +34,19 @@ class Configuration {
      * Reloads the plugin configuration.
      */
     void reload() {
-        NerdyDragon.PLUGIN.reloadConfig();
-        FileConfiguration config = NerdyDragon.PLUGIN.getConfig();
-        Logger logger = NerdyDragon.PLUGIN.getLogger();
+        PLUGIN.reloadConfig();
+        FileConfiguration config = PLUGIN.getConfig();
+        Logger logger = PLUGIN.getLogger();
         List<Map<?, ?>> customDrops = config.getMapList("custom-drops");
 
         // clear out the current drops to avoid duplicates
         DROPS_MANAGER.clear();
+
+        // ---------------------------------------------------------------------
+        // debug -> DEBUG
+        // (upon error, will default to false)
+        // ---------------------------------------------------------------------
+        DEBUG = config.getBoolean("debug", false);
 
         // ---------------------------------------------------------------------
         // upon-fail-drop-in-portal -> FAILSAFE_DROP_IN_PORTAL
@@ -52,39 +58,35 @@ class Configuration {
         // default-world -> DEFAULT_WORLD
         // (upon error, the plugin will be disabled)
         // ---------------------------------------------------------------------
-        String tryWorld = config.getString("default-world");
-        World DEFAULT_WORLD = NerdyDragon.PLUGIN.getServer().getWorld(tryWorld);
-        if (DEFAULT_WORLD == null) {
+        Optional<World> tryWorld = Optional.ofNullable(config.getString("default-world"))
+                                            .map(PLUGIN.getServer()::getWorld);
+        try {
+            DEFAULT_WORLD = tryWorld.orElseThrow(IllegalArgumentException::new);
+        } catch (Exception e) {
             logger.warning("Fatal configuration error: specified default world (" + tryWorld + ") does not exist.");
-            NerdyDragon.PLUGIN.getServer().getPluginManager().disablePlugin(NerdyDragon.PLUGIN);
+            PLUGIN.getServer().getPluginManager().disablePlugin(PLUGIN);
         }
 
         // ---------------------------------------------------------------------
         // default-drop-search-radius -> DEFAULT_DROP_SEARCH_RADIUS
         // (upon error, the default radius will be set to 4 blocks)
         // ---------------------------------------------------------------------
-        int tryRadius = config.getInt("default-drop-search-radius");
-        if (tryRadius <= 0) {
-            tryRadius = 4;
+        // we use Optional#of here instead of Optional#ofNullable since ConfigurationSection#getInt
+        // will return 0 if null
+        Optional<Integer> tryRadius = Optional.of(config.getInt("default-drop-search-radius"));
+        try {
+            tryRadius.filter(i -> i > 0).orElseThrow(IllegalArgumentException::new);
+        } catch (Exception e) {
+            tryRadius = Optional.of(4);
             logger.info("Configuration error: specified default drop search radius (" + tryRadius + ") " +
                     "should be an integer greater than 0. Defaulting to 4.");
         }
-        DEFAULT_DROP_SEARCH_RADIUS = tryRadius;
+        DEFAULT_DROP_SEARCH_RADIUS = tryRadius.get();
 
         // ---------------------------------------------------------------------
         // custom-drops
         // ---------------------------------------------------------------------
         for (Map<?, ?> itemMap : customDrops) {
-
-            // store information for the current custom drop
-            String itemName;
-            ArrayList<String> itemLore = new ArrayList<>();
-            Material material;
-            Enchantment enchantment;
-            double dropRate;
-            int dropQty;
-
-
 
             // ---------------------------------------------------------------------
             // name -> String
@@ -94,7 +96,7 @@ class Configuration {
                                                 .map(Object::toString)
                                                 .map(this::format);
             if (!tryName.isPresent()) {
-                logger.warning("Configuration error: name (" + tryName.orElse("N/A") + " is invalid.");
+                logger.warning("Configuration error: name for custom drop is invalid or missing.");
                 continue;
             }
 
@@ -106,7 +108,7 @@ class Configuration {
                                                     .map(Object::toString)
                                                     .map(Material::matchMaterial);
             if (!tryMaterial.isPresent()) {
-                logger.warning("Configuration error: material for " + tryName + " is not a Material.");
+                logger.warning("Configuration error: material for " + tryName.get() + " is not a Material.");
                 continue;
             }
 
@@ -118,7 +120,7 @@ class Configuration {
                                                 .map(Object::toString)
                                                 .map(Integer::parseInt);
             try {
-                if (tryQty.orElseThrow(IllegalArgumentException::new) < 0) throw new IllegalStateException();
+                tryQty.filter(i -> i >= 0).orElseThrow(IllegalArgumentException::new);
             } catch (Exception e) {
                 logger.warning("Configuration error: drop qty " + tryQty + " is not an integer.");
                 continue;
@@ -151,8 +153,10 @@ class Configuration {
             // (this is a little iffy)
             // ---------------------------------------------------------------------
             Optional<List<String>> tryLore = Optional.ofNullable(itemMap.get("lore"))
-                                                .map(Configuration::objToList);
-            tryLore.map(List::stream).map(s -> s.map(this::format)).map(s -> s.collect(Collectors.toList()));
+                                                .map(Configuration::objToList)
+                                                .map(List::stream)
+                                                .map(s -> s.map(this::format))
+                                                .map(s -> s.collect(Collectors.toList()));
 
             // ---------------------------------------------------------------------
             // create the item stack
@@ -169,7 +173,7 @@ class Configuration {
             // send the item stack to the drops manager to be saved
             DROPS_MANAGER.loadNewItem(itemStack, tryRate.get());
             logger.info("Added " + tryName.get() + " to drops list.");
-            logger.info("Lore: " + tryLore.get());
+            if (DEBUG) logger.info("Lore: " + tryLore.orElse(null));
 
         } // for custom-drop
 

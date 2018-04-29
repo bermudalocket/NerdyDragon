@@ -12,7 +12,7 @@ class DropsManager {
 
     /**
      * A mapping from the ItemStack of a custom drop to its drop rate
-     * <p>
+     *
      * f : ItemStack customDrop -> Double dropRate
      */
     private HashMap<ItemStack, Double> _customDrops = new HashMap<>();

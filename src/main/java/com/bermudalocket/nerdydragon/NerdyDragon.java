@@ -81,8 +81,7 @@ public class NerdyDragon extends JavaPlugin implements Listener {
      * @param itemStack The custom drop
      */
     private void giveCustomDrop(Player player, ItemStack itemStack) {
-        String itemName = (itemStack.hasItemMeta()) ? itemStack.getItemMeta().getDisplayName()
-                : itemStack.getType().toString();
+        String itemName = (itemStack.hasItemMeta()) ? itemStack.getItemMeta().getDisplayName() : itemStack.getType().toString();
         PlayerInventory playerInventory = player.getInventory();
         World world = player.getWorld();
 
@@ -95,12 +94,10 @@ public class NerdyDragon extends JavaPlugin implements Listener {
         if (result.isEmpty()) {
             getLogger().info("Gave a custom dragon drop (" + itemName + ") to " + player.getName());
         } else {
-            Location dropLoc = (Configuration.FAILSAFE_DROP_IN_PORTAL) ? world.getSpawnLocation()
-                    : player.getLocation();
+            Location dropLoc = (Configuration.FAILSAFE_DROP_IN_PORTAL) ? world.getSpawnLocation() : player.getLocation();
             result.values().forEach(i -> {
                 world.dropItemNaturally(dropLoc, i);
-                getLogger().info(player.getName() + "'s inventory is full! Dropping " + itemName
-                        + " at (" + dropLoc.toString() + ").");
+                getLogger().info(player.getName() + "'s inventory is full! Dropping " + itemName + " at (" + dropLoc.toString() + ").");
             });
         }
     }
