@@ -25,3 +25,14 @@ custom-drops:
 Note that `name` must be in single quotes; `material` must be a Material*; `name-color` must be a ChatColor*; `enchant` must be an Enchantment*, `drop-rate` must be a double in the interval `[0.0, 1.0]`; `drop-qty` must be a positive integer; and `lore` must be a list of strings (Minecraft color codes allowed!).
 
 `*` denotes a Bukkit/Spigot/Paper object -- see respective javadocs
+
+## Commands
+
+* `nerdydragon-reload` - reloads the configuration file (no restart necessary!)
+* `nerdydragon-list` - prints a list of all currently active custom drops into your chat window
+* `nerdydragon-peek` - places in your inventory one of each currently active custom drop (i.e. for color code/formatting verification)
+* `nerdydragon-toggle` - toggles the plugin's state to either enabled or soft disabled (i.e. the plugin is not actually disabled and can be re-enabled by running `nerdydragon-toggle` once again, instead of having to restart the server)
+
+## Permissions
+
+* `nerdydragon-admin` - the only permission, gives access to all commands (default group: op)
