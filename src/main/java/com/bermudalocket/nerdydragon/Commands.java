@@ -6,16 +6,19 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import static com.bermudalocket.nerdydragon.NerdyDragon.DROPS_MANAGER;
 import static com.bermudalocket.nerdydragon.NerdyDragon.CONFIGURATION;
+import static com.bermudalocket.nerdydragon.NerdyDragon.DROPS_MANAGER;
 
 public class Commands implements CommandExecutor {
 
+    /**
+     * A convenience field which stores the colorized [NerdyDragon] prefix for chat messages
+     */
     private static final String prefix = String.format("%s[%sNerdyDragon%s] ",
             ChatColor.GRAY, ChatColor.AQUA, ChatColor.GRAY);
 
     /**
-     * Registers the plugin's commands
+     * Registers the plugin's commands in the constructor
      */
     Commands() {
         NerdyDragon.PLUGIN.getCommand("nerdydragon-list").setExecutor(this);

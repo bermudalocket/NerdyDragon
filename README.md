@@ -14,7 +14,6 @@ Example custom drop:
 custom-drops:
   - name: 'Essence of Flight'
     material: GHAST_TEAR
-    name-color: AQUA
     enchant: ARROW_INFINITE
     drop-rate: 1.0
     drop-qty: 1
@@ -22,7 +21,7 @@ custom-drops:
       - '&rTrade in with &6Fragments of Amber&r at the &3Spawn Museum&r!'
 ```
 
-Note that `name` must be in single quotes; `material` must be a Material*; `name-color` must be a ChatColor*; `enchant` must be an Enchantment*, `drop-rate` must be a double in the interval `[0.0, 1.0]`; `drop-qty` must be a positive integer; and `lore` must be a list of strings (Minecraft color codes allowed!).
+Note that `name` must be in single quotes (Minecraft color codes allowed!); `material` must be a Material*; `enchant` must be an Enchantment*, `drop-rate` must be a double in the interval `[0.0, 1.0]`; `drop-qty` must be a positive integer; and `lore` must be a list of strings (Minecraft color codes allowed here too!).
 
 `*` denotes a Bukkit/Spigot/Paper object -- see respective javadocs
 

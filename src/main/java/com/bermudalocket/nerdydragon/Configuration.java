@@ -59,7 +59,7 @@ class Configuration {
         // (upon error, the plugin will be disabled)
         // ---------------------------------------------------------------------
         Optional<World> tryWorld = Optional.ofNullable(config.getString("default-world"))
-                                            .map(PLUGIN.getServer()::getWorld);
+                .map(PLUGIN.getServer()::getWorld);
         try {
             DEFAULT_WORLD = tryWorld.orElseThrow(IllegalArgumentException::new);
         } catch (Exception e) {
@@ -93,8 +93,8 @@ class Configuration {
             // (upon error, this custom-drop will be skipped)
             // ---------------------------------------------------------------------
             Optional<String> tryName = Optional.ofNullable(itemMap.get("name"))
-                                                .map(Object::toString)
-                                                .map(this::format);
+                    .map(Object::toString)
+                    .map(this::format);
             if (!tryName.isPresent()) {
                 logger.warning("Configuration error: name for custom drop is invalid or missing.");
                 continue;
@@ -105,8 +105,8 @@ class Configuration {
             // (upon error, this custom-drop will be skipped)
             // ---------------------------------------------------------------------
             Optional<Material> tryMaterial = Optional.ofNullable(itemMap.get("material"))
-                                                    .map(Object::toString)
-                                                    .map(Material::matchMaterial);
+                    .map(Object::toString)
+                    .map(Material::matchMaterial);
             if (!tryMaterial.isPresent()) {
                 logger.warning("Configuration error: material for " + tryName.get() + " is not a Material.");
                 continue;
@@ -117,8 +117,8 @@ class Configuration {
             // (upon error, this custom-drop will be skipped)
             // ---------------------------------------------------------------------
             Optional<Integer> tryQty = Optional.ofNullable(itemMap.get("drop-qty"))
-                                                .map(Object::toString)
-                                                .map(Integer::parseInt);
+                    .map(Object::toString)
+                    .map(Integer::parseInt);
             try {
                 tryQty.filter(i -> i >= 0).orElseThrow(IllegalArgumentException::new);
             } catch (Exception e) {
@@ -131,16 +131,16 @@ class Configuration {
             // (upon error, this custom-drop will default to ARROW_INFINITE)
             // ---------------------------------------------------------------------
             Optional<Enchantment> tryEnchant = Optional.ofNullable(itemMap.get("enchant"))
-                                                        .map(Object::toString)
-                                                        .map(Enchantment::getByName);
+                    .map(Object::toString)
+                    .map(Enchantment::getByName);
 
             // ---------------------------------------------------------------------
             // drop-rate -> Double
             // (upon error, this custom-drop will be skipped)
             // ---------------------------------------------------------------------
             Optional<Double> tryRate = Optional.ofNullable(itemMap.get("drop-rate"))
-                                                .map(Object::toString)
-                                                .map(Double::parseDouble);
+                    .map(Object::toString)
+                    .map(Double::parseDouble);
             try {
                 tryRate.filter(d -> d <= 1d && d >= 0d).orElseThrow(IllegalArgumentException::new);
             } catch (Exception e) {
@@ -153,10 +153,10 @@ class Configuration {
             // (this is a little iffy)
             // ---------------------------------------------------------------------
             Optional<List<String>> tryLore = Optional.ofNullable(itemMap.get("lore"))
-                                                .map(Configuration::objToList)
-                                                .map(List::stream)
-                                                .map(s -> s.map(this::format))
-                                                .map(s -> s.collect(Collectors.toList()));
+                    .map(Configuration::objToList)
+                    .map(List::stream)
+                    .map(s -> s.map(this::format))
+                    .map(s -> s.collect(Collectors.toList()));
 
             // ---------------------------------------------------------------------
             // create the item stack
@@ -189,6 +189,11 @@ class Configuration {
         return ChatColor.translateAlternateColorCodes("&".charAt(0), string);
     }
 
+    /**
+     * Casts an Object as a List<String>
+     * @param o the object to cast
+     * @return the resultant List
+     */
     private static List<String> objToList(Object o) {
         return (List<String>) o;
     }

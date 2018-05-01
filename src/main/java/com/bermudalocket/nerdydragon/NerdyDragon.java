@@ -1,9 +1,7 @@
 package com.bermudalocket.nerdydragon;
 
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,9 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Optional;
 
 public class NerdyDragon extends JavaPlugin implements Listener {
@@ -34,6 +30,13 @@ public class NerdyDragon extends JavaPlugin implements Listener {
      * The drops manager accessible as a singleton
      */
     static DropsManager DROPS_MANAGER = new DropsManager();
+
+    /**
+     * The current plugin state
+     */
+    private static Boolean _state = true;
+
+    // -------------------------------------------------------------------------
 
     /**
      * @see org.bukkit.plugin.java.JavaPlugin#onEnable()
@@ -60,19 +63,18 @@ public class NerdyDragon extends JavaPlugin implements Listener {
     public void onEntityDeath(EntityDeathEvent e) {
         if (!e.getEntityType().equals(EntityType.ENDER_DRAGON)) return;
 
+        Optional<Player> player = Optional.ofNullable(e.getEntity().getKiller());
+
         if (!_state) {
-            getLogger().info("Ender Dragon death detected but the plugin is toggled off.");
+            getLogger().info(player + " killed the Ender Dragon but the plugin is toggled off.");
             return;
         }
 
-        Player player = e.getEntity().getKiller();
-        if (player != null && player.isOnline())
-            DROPS_MANAGER.getRandomDrops().forEach(i -> giveCustomDrop(player, i));
+        if (player.isPresent() && player.get().isOnline())
+            DROPS_MANAGER.getRandomDrops().forEach(i -> giveCustomDrop(player.get(), i));
         else
             DROPS_MANAGER.getRandomDrops().forEach(this::randomlyDropInWorld);
     }
-
-    // -------------------------------------------------------------------------
 
     /**
      * Gives the specified custom drop to the specified player.
@@ -92,12 +94,12 @@ public class NerdyDragon extends JavaPlugin implements Listener {
         HashMap<Integer, ItemStack> result = playerInventory.addItem(itemStack);
 
         if (result.isEmpty()) {
-            getLogger().info("Gave a custom dragon drop (" + itemName + ") to " + player.getName());
+            Util.notifyPlayer(player, "You received a(n) " + itemName + " in your inventory!");
         } else {
-            Location dropLoc = (Configuration.FAILSAFE_DROP_IN_PORTAL) ? world.getSpawnLocation() : player.getLocation();
+            Location dropLoc = (Configuration.FAILSAFE_DROP_IN_PORTAL) ? Util.findEndPortal(world) : player.getLocation();
             result.values().forEach(i -> {
                 world.dropItemNaturally(dropLoc, i);
-                getLogger().info(player.getName() + "'s inventory is full! Dropping " + itemName + " at (" + dropLoc.toString() + ").");
+                Util.notifyPlayer(player, "Your inventory was full! Your " + itemName + " has been dropped at " + Util.locationToOrderedTriple(dropLoc));
             });
         }
     }
@@ -113,30 +115,7 @@ public class NerdyDragon extends JavaPlugin implements Listener {
         if (Configuration.FAILSAFE_DROP_IN_PORTAL)
             world.dropItemNaturally(spawnLoc, itemStack);
         else
-            world.dropItem(getSafeDropLoc(spawnLoc).orElse(spawnLoc), itemStack);
-    }
-
-    /**
-     * Finds a safe drop location around the given location.
-     *
-     * @return an optional Location
-     */
-    private Optional<Location> getSafeDropLoc(Location aboutLoc) {
-        World world = aboutLoc.getWorld();
-        int x0 = aboutLoc.getBlockX();
-        int z0 = aboutLoc.getBlockZ();
-        int delta = Configuration.DEFAULT_DROP_SEARCH_RADIUS;
-
-        for (int x = x0 - delta; x <= x0 + delta; x++) {
-            for (int z = z0 - delta; z <= z0 + delta; z++) {
-                Block nextBlock = world.getHighestBlockAt(x, z);
-                if (nextBlock != null && !_omitBlocks.contains(nextBlock.getType())) {
-                    int y = world.getHighestBlockYAt(x, z);
-                    return Optional.of(new Location(world, x, y, z));
-                }
-            }
-        }
-        return Optional.empty();
+            world.dropItem(Util.getSafeDropLoc(spawnLoc).orElse(spawnLoc), itemStack);
     }
 
     /**
@@ -148,16 +127,5 @@ public class NerdyDragon extends JavaPlugin implements Listener {
         _state = !_state;
         return _state;
     }
-
-    /**
-     * A HashSet of all the "unsafe" blocks we don't want to be dropping items onto.
-     */
-    private static HashSet<Material> _omitBlocks = new HashSet<>(Arrays.asList(
-            Material.STRUCTURE_VOID, Material.FIRE, Material.ENDER_PORTAL, Material.END_GATEWAY));
-
-    /**
-     * The current plugin state
-     */
-    private static Boolean _state = true;
 
 } // NerdyDragon
