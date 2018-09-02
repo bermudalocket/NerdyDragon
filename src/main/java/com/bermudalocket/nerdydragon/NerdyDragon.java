@@ -1,5 +1,6 @@
 package com.bermudalocket.nerdydragon;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
@@ -12,34 +13,33 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
-import java.util.Optional;
+import java.util.function.Consumer;
 
+// ----------------------------------------------------------------------------------------------------------
+/**
+ * The main plugin and event-handling class.
+ */
 public class NerdyDragon extends JavaPlugin implements Listener {
 
+    // ------------------------------------------------------------------------------------------------------
     /**
-     * The plugin accessible as a singleton
+     * This plugin.
      */
     static NerdyDragon PLUGIN;
 
     /**
-     * The configuration handler accessible as a singleton
+     * The Ender Dragon's new loot table.
      */
-    static Configuration CONFIGURATION = new Configuration();
+    private final LootTable _lootTable = new LootTable();
 
     /**
-     * The drops manager accessible as a singleton
+     * The current plugin state.
      */
-    static DropsManager DROPS_MANAGER = new DropsManager();
+    private static Boolean STATE;
 
+    // ------------------------------------------------------------------------------------------------------
     /**
-     * The current plugin state
-     */
-    private static Boolean _state = true;
-
-    // -------------------------------------------------------------------------
-
-    /**
-     * @see org.bukkit.plugin.java.JavaPlugin#onEnable()
+     * @see JavaPlugin#onEnable().
      */
     public void onEnable() {
         PLUGIN = this;
@@ -47,75 +47,114 @@ public class NerdyDragon extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
 
         saveDefaultConfig();
-        CONFIGURATION.reload();
+        Configuration.reload(false);
 
         new Commands();
     }
 
-    // -------------------------------------------------------------------------
+    /**
+     * @see JavaPlugin#onDisable().
+     */
+    public void onDisable() {
+        Configuration.save();
+    }
 
+    // ------------------------------------------------------------------------------------------------------
+    // Event Handlers
+    // ------------------------------------------------------------------------------------------------------
     /**
      * Handle custom drops upon Ender Dragon death
      *
      * @param e the EntityDeathEvent
      */
     @EventHandler
-    public void onEntityDeath(EntityDeathEvent e) {
-        if (!e.getEntityType().equals(EntityType.ENDER_DRAGON)) return;
-
-        Optional<Player> player = Optional.ofNullable(e.getEntity().getKiller());
-
-        if (!_state) {
-            getLogger().info(player + " killed the Ender Dragon but the plugin is toggled off.");
-            return;
+    protected void onEntityDeath(EntityDeathEvent e) {
+        if (e.getEntityType() == EntityType.ENDER_DRAGON) {
+            Player player = e.getEntity().getKiller();
+            if (player != null) {
+                if (STATE) {
+                    Consumer<ItemStack> consumer = getConsumer(player);
+                    _lootTable.getLoot().forEach(consumer);
+                } else {
+                    log(player.getName() + " killed the Ender Dragon but the plugin is soft disabled.");
+                }
+            } else {
+                log("The dragon was killed but the killer is null!");
+            }
         }
+    }
 
-        if (player.isPresent() && player.get().isOnline())
-            DROPS_MANAGER.getRandomDrops().forEach(i -> giveCustomDrop(player.get(), i));
-        else
-            DROPS_MANAGER.getRandomDrops().forEach(this::randomlyDropInWorld);
+    /**
+     * Returns a (loot) consumer depending on the player's online status.
+     *
+     * @param player the player.
+     * @return the consumer.
+     */
+    private Consumer<ItemStack> getConsumer(Player player) {
+        return (player.isOnline()) ? item -> givePlayerLoot(player, item) : this::safelyDropInWorld;
+    }
+
+    // ------------------------------------------------------------------------------------------------------
+    // Loot
+    // ------------------------------------------------------------------------------------------------------
+    /**
+     * Returns the loot table.
+     *
+     * @return the loot table.
+     */
+    LootTable getLootTable() {
+        return _lootTable;
     }
 
     /**
      * Gives the specified custom drop to the specified player.
      *
-     * @param player    The player whom will receive the custom drop
-     * @param itemStack The custom drop
+     * @param player the player.
+     * @param itemStack the custom drop.
      */
-    private void giveCustomDrop(Player player, ItemStack itemStack) {
-        String itemName = (itemStack.hasItemMeta()) ? itemStack.getItemMeta().getDisplayName() : itemStack.getType().toString();
+    private void givePlayerLoot(Player player, ItemStack itemStack) {
+        String itemName = (itemStack.hasItemMeta()) ? itemStack.getItemMeta().getDisplayName()
+                                                    : itemStack.getType().toString();
         PlayerInventory playerInventory = player.getInventory();
-        World world = player.getWorld();
 
-        // PlayerInventory#addItem returns a HashMap containing any items that failed to add.
-        // If the result is empty, everything was added to the player's inventory. If not,
-        // we'll have to drop those naturally.
-
+        // PlayerInventory#addItem returns a HashMap containing any items that failed to add
         HashMap<Integer, ItemStack> result = playerInventory.addItem(itemStack);
-
         if (result.isEmpty()) {
-            Util.notifyPlayer(player, "You received a(n) " + itemName + " in your inventory!");
+            Util.notifyPlayer(player, "You received a(n) " + ChatColor.WHITE + itemName + ChatColor.GOLD +
+                                        " in your inventory!");
         } else {
-            Location dropLoc = (Configuration.FAILSAFE_DROP_IN_PORTAL) ? Util.findEndPortal(world) : player.getLocation();
-            result.values().forEach(i -> {
-                world.dropItemNaturally(dropLoc, i);
-                Util.notifyPlayer(player, "Your inventory was full! Your " + itemName + " has been dropped at " + Util.locationToOrderedTriple(dropLoc));
-            });
+            for (ItemStack item : result.values()) {
+                Location dropLoc = player.getLocation();
+                player.getWorld().dropItemNaturally(dropLoc, item).setInvulnerable(true);
+                Util.notifyPlayer(player, "Your inventory was full! Your " + ChatColor.WHITE + itemName +
+                                            ChatColor.GOLD + " has been dropped at " +
+                                            Util.locationToOrderedTriple(dropLoc));
+            }
         }
     }
 
     /**
-     * Randomly drops the specified ItemStack in the default world.
+     * Safely drops the specified ItemStack in the default world specified in config.
      *
      * @param itemStack the ItemStack to drop
      */
-    private void randomlyDropInWorld(ItemStack itemStack) {
+    private void safelyDropInWorld(ItemStack itemStack) {
         World world = Configuration.DEFAULT_WORLD;
         Location spawnLoc = world.getSpawnLocation();
-        if (Configuration.FAILSAFE_DROP_IN_PORTAL)
-            world.dropItemNaturally(spawnLoc, itemStack);
-        else
-            world.dropItem(Util.getSafeDropLoc(spawnLoc).orElse(spawnLoc), itemStack);
+        world.dropItem(Util.getSafeDropLoc(spawnLoc), itemStack);
+    }
+
+    // ------------------------------------------------------------------------------------------------------
+    // Misc
+    // ------------------------------------------------------------------------------------------------------
+    /**
+     * A logging convenience method, used instead of {@link java.util.logging.Logger} for colorizing this
+     * plugin's name in console.
+     *
+     * @param message the message to log.
+     */
+    static void log(String message) {
+        System.out.println(PREFIX + message);
     }
 
     /**
@@ -124,8 +163,25 @@ public class NerdyDragon extends JavaPlugin implements Listener {
      * @return the new state
      */
     boolean toggleState() {
-        _state = !_state;
-        return _state;
+        STATE = !STATE;
+        return STATE;
     }
 
-} // NerdyDragon
+    /**
+     * Returns this plugin's message prefix.
+     *
+     * @return the prefix.
+     */
+    static String getPrefix() {
+        return PREFIX;
+    }
+
+    // ------------------------------------------------------------------------------------------------------
+    /**
+     * A pre-formatted log prefix for this plugin.
+     */
+    private static final String PREFIX = String.format("%s[%s%sNerdyDragon%s%s] %s[%sLOG%s] %s",
+            ChatColor.DARK_GRAY, ChatColor.DARK_RED, ChatColor.BOLD, ChatColor.RESET, ChatColor.DARK_GRAY,
+            ChatColor.DARK_GRAY, ChatColor.DARK_RED, ChatColor.DARK_GRAY, ChatColor.DARK_GRAY);
+
+}
