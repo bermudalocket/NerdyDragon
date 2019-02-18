@@ -1,90 +1,136 @@
 package com.bermudalocket.nerdydragon;
 
-import org.bukkit.ChatColor;
+import nu.nerd.entitymeta.EntityMeta;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Random;
 
-class Util {
+public class Util {
 
+    public static final World WORLD_THE_END = Bukkit.getWorld("world_the_end");
+
+    public static final Location END_SPAWN = new Location(WORLD_THE_END, 0, 55, 0);
+
+    // ------------------------------------------------------------------------
     /**
-     * A persistent Random object.
+     * Returns the head of a random admin.
+     *
+     * @return the head of a random admin.
      */
-    static final Random RANDOM = new Random();
+    public static ItemStack getRandomAdminHead() {
+        String randomAdmin = MathUtil.getRandomObject(ADMINS);
+        return getPlayerHead(randomAdmin);
+    }
 
-    /**
-     * A HashSet of all the "unsafe" blocks we don't want to be dropping items onto.
-     */
-    private static HashSet<Material> BLACKLIST = new HashSet<>(Arrays.asList(
-            Material.STRUCTURE_VOID, Material.FIRE, Material.ENDER_PORTAL, Material.END_GATEWAY));
-
+    // ------------------------------------------------------------------------
     /**
      * Transforms a location object to an ordered triple of the form (x, y, z)
      *
      * @param loc The location to transform
      * @return The transformed ordered triple
      */
-    static String locationToOrderedTriple(Location loc) {
+    public static String locationToOrderedTriple(Location loc) {
         return "(" + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ() + ")";
     }
 
+    // ------------------------------------------------------------------------
     /**
-     * Convenience method to notify player of the custom drop location
+     * Returns true if the given player is flying or gliding with an elytra.
      *
-     * @param player The player to notify
-     * @param msg    The message to display
+     * @param player the player.
+     * @return true if the given player is flying or gliding with an elytra.
      */
-    static void notifyPlayer(Player player, String msg) {
-        player.playSound(player.getLocation(), Sound.BLOCK_END_PORTAL_FRAME_FILL, 1f, 1f);
-        player.sendMessage(ChatColor.GOLD + msg);
-        NerdyDragon.log("Sent notification to " + player.getName() + ": " + msg);
-    }
-
-    /**
-     * Finds a safe drop location around the given location.
-     *
-     * @return an safe drop Location
-     */
-    static Location getSafeDropLoc(Location center) {
-        World world = center.getWorld();
-        int x0 = center.getBlockX();
-        int z0 = center.getBlockZ();
-        int delta = Configuration.DEFAULT_DROP_SEARCH_RADIUS;
-
-        for (int x = x0 - delta; x <= x0 + delta; x++) {
-            for (int z = z0 - delta; z <= z0 + delta; z++) {
-                Block nextBlock = world.getHighestBlockAt(x, z);
-                if (nextBlock != null && !BLACKLIST.contains(nextBlock.getType())) {
-                    return nextBlock.getLocation();
-                }
+    public static boolean isFlying(Player player) {
+        if (player == null || !player.isOnline() || player.isOnGround()) {
+            return false;
+        }
+        EntityEquipment equipment = player.getEquipment();
+        if (equipment != null) {
+            ItemStack chestplateSlot = equipment.getChestplate();
+            if (chestplateSlot != null && chestplateSlot.getType() == Material.ELYTRA) {
+                return player.isGliding();
             }
         }
-        return center;
+        return false;
     }
 
+    // ------------------------------------------------------------------------
     /**
-     * Returns either the custom name (if present) or the material type.
+     * Finds the player, if one exists, in the given EntityDamageByEntityEvent.
      *
-     * @param itemStack the item stack.
-     * @return either the custom name (if present) or the material type.
+     * @param e the event.
+     * @return the player involved, if one exists; otherwise null.
      */
-    static String getFormattedName(ItemStack itemStack) {
-        if (itemStack.hasItemMeta()) {
-            ItemMeta itemMeta = itemStack.getItemMeta();
-            if (itemMeta.hasDisplayName()) {
-                return itemMeta.getDisplayName();
+    static Player getPlayerFromDamageEvent(EntityDamageByEntityEvent e) {
+        if (e.getDamager() instanceof Player) {
+            return (Player) e.getDamager();
+        } else if (e.getDamager() instanceof Projectile) {
+            Projectile projectile = (Projectile) e.getDamager();
+            if (projectile.getShooter() instanceof Player) {
+                return (Player) projectile.getShooter();
             }
         }
-        return itemStack.getType().toString();
+        return null;
     }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Returns the given player's head as an ItemStack.
+     *
+     * @param player the player.
+     * @return the given player's head as an ItemStack.
+     */
+    @SuppressWarnings("deprecation")
+    public static ItemStack getPlayerHead(String player) {
+        ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta skullMeta = (SkullMeta) itemStack.getItemMeta();
+        skullMeta.setOwningPlayer(Bukkit.getOfflinePlayer(player));
+        itemStack.setItemMeta(skullMeta);
+        return itemStack;
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Returns true if the entity has been spawned by this fight.
+     *
+     * @param entity the entity.
+     * @return true if the entity has been spawned by this fight.
+     */
+    public static boolean isReinforcement(Entity entity) {
+        if (entity == null) {
+            return false;
+        }
+        Object meta = EntityMeta.api().get(entity, NerdyDragon.PLUGIN, METADATA_KEY);
+        return meta != null && "true".equalsIgnoreCase((String) meta);
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Tags the given entity with this fight's UUID as metadata.
+     *
+     * @param entity the entity to tag.
+     */
+    static void tagEntityWithMetadata(Entity entity) {
+        EntityMeta.api().set(entity, NerdyDragon.PLUGIN, METADATA_KEY, "true");
+    }
+
+    private static final String METADATA_KEY = "dragon-fight";
+
+    private static final HashSet<String> ADMINS = new HashSet<>(Arrays.asList(
+        "pez252", "ttsci", "defiex",
+        "cujobear", "Flumper", "kumquatmay",
+        "bermudalocket", "totemo"
+    ));
 
 }

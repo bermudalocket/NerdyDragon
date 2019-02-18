@@ -1,13 +1,4 @@
-debug: FALSE
-
-default-world: WORLD_THE_END
-default-drop-search-radius: 4
-
-custom-drops:
-  - name: 'Essence of Flight'
-    material: GHAST_TEAR
-    enchant: ARROW_INFINITE
-    drop-rate: 1.0
-    drop-qty: 1
-    lore:
-      - '&rTrade in with &6Fragments of Amber&r at the &3Spawn Museum&r!'
+mirror-dragon-death-sound:
+  - world
+  - world_nether
+  - mapworld

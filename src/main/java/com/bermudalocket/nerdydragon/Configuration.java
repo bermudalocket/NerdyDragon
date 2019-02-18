@@ -1,82 +1,145 @@
 package com.bermudalocket.nerdydragon;
 
+import com.google.common.collect.ImmutableSet;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.EnderCrystal;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.logging.Logger;
-
-import static com.bermudalocket.nerdydragon.NerdyDragon.PLUGIN;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Handles the plugin configuration.
  */
-class Configuration {
+public class Configuration {
 
-    /**
-     * The default world, usually world_the_end.
-     */
-    static World DEFAULT_WORLD;
+    public static boolean ENABLED;
 
-    /**
-     * Defines the radius of the square search area when safely dropping loot.
-     */
-    static int DEFAULT_DROP_SEARCH_RADIUS;
+    static HashSet<UUID> MIRROR_DRAGON_DEATH_WORLDS = new HashSet<>();
 
+    static HashSet<Location> ENDER_CRYSTAL_PILLAR_LOCATIONS = new HashSet<>();
+
+    public static int RAIN_FIRE_RADIUS = 40;
+
+    public static double DRAGON_ABSORB_PROJECTILE_CHANCE = 0.333;
+
+    // potion effects
+    public static int BASE_POTION_DUR = 3;
+
+    // ------------------------------------------------------------------------
     /**
      * Reloads the plugin configuration.
      */
-    static void reload(boolean saveFirst) {
+    public static void reload() {
         NerdyDragon.log("Reloading configuration.");
-        if (saveFirst) {
-            save();
-        }
-        PLUGIN.reloadConfig();
-        FileConfiguration config = PLUGIN.getConfig();
-        Logger logger = PLUGIN.getLogger();
+        NerdyDragon.PLUGIN.reloadConfig();
+        FileConfiguration config = NerdyDragon.PLUGIN.getConfig();
 
-        ConfigurationSection lootSection = getOrCreateSection("custom-drops", config);
-        NerdyDragon.PLUGIN.getLootTable().load(lootSection);
+        ENABLED = config.getBoolean("enabled", true);
 
-        String worldName = config.getString("default-word");
-        if (worldName != null) {
-            World world = NerdyDragon.PLUGIN.getServer().getWorld(worldName);
-            if (world != null) {
-                DEFAULT_WORLD = world;
-            } else {
-                logger.warning("Fatal configuration error: specified default world (" + worldName + ") does not exist.");
-                PLUGIN.getServer().getPluginManager().disablePlugin(PLUGIN);
-            }
-        }
+        MIRROR_DRAGON_DEATH_WORLDS = config.getStringList("mirror-dragon-death-sound")
+                                           .stream()
+                                           .map(Bukkit::getWorld)
+                                           .filter(Objects::nonNull)
+                                           .map(World::getUID)
+                                           .collect(Collectors.toCollection(HashSet::new));
 
-        int radius = config.getInt("default-drop-search-radius", 0);
-        DEFAULT_DROP_SEARCH_RADIUS = (radius > 0) ? radius : 4;
-        if (radius <= 0) {
-            logger.info("Configuration error: specified default drop search radius (" + radius + ") " +
-                                "should be an integer greater than 0. Defaulting to 4.");
+        for (String locString : config.getStringList("ender-crystal-pillar-locations")) {
+            String[] parts = locString.split(",");
+            int x = Integer.valueOf(parts[0]);
+            int y = Integer.valueOf(parts[1]);
+            int z = Integer.valueOf(parts[2]);
+            NerdyDragon.log("Loaded regeneration point: (" + x + ", " + y + ", " + z + ")");
+            ENDER_CRYSTAL_PILLAR_LOCATIONS.add(new Location(Util.WORLD_THE_END, x, y, z));
         }
 
         NerdyDragon.log("Configuration successfully reloaded.");
     }
 
+    // ------------------------------------------------------------------------
     /**
-     * Saves the plugin state.
+     * Soft-enables/disables the plugin, i.e. the main CreatureSpawnEvent
+     * listener in the main plugin class will short-circuit.
      */
-    static void save() {
-        ConfigurationSection lootSection = getOrCreateSection("custom-drops", PLUGIN.getConfig());
-        NerdyDragon.PLUGIN.getLootTable().save(lootSection);
+    public static void setEnabled(boolean enabled) {
+        ENABLED = enabled;
+        NerdyDragon.PLUGIN.getConfig().set("enabled", enabled);
+        NerdyDragon.PLUGIN.saveConfig();
     }
 
+    // ------------------------------------------------------------------------
     /**
-     * Returns the requested configuration section. If the section does not exist, it is created.
+     * Returns an immutable set of the dragon fight loot.
+     *
+     * @return the loot.
+     */
+    public static ImmutableSet<ItemStack> getLoot() {
+        ItemStack wings = new ItemStack(Material.ELYTRA, 1);
+        ItemMeta meta = wings.getItemMeta();
+        meta.setLore(Collections.singletonList(ChatColor.DARK_PURPLE + "I Survived The Dragon Fight!"));
+        wings.setItemMeta(meta);
+        return ImmutableSet.of(wings, new ItemStack(Material.DRAGON_HEAD, 1));
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Saves the spawn locations of the crystals atop the end pillars for
+     * regeneration.
+     *
+     * @param locations the locations to save.
+     */
+    public static void saveEnderCrystalPillarLocations(HashSet<EnderCrystal> locations) {
+        ENDER_CRYSTAL_PILLAR_LOCATIONS.clear();
+        FileConfiguration config = NerdyDragon.PLUGIN.getConfig();
+        List<String> stringList = new ArrayList<>();
+        for (EnderCrystal crystal : locations) {
+            Location location = crystal.getLocation();
+            ENDER_CRYSTAL_PILLAR_LOCATIONS.add(location);
+            String coordString = location.getBlockX() + "," + location.getBlockY() + "," + location.getBlockZ();
+            NerdyDragon.log("Saved regeneration point: (" + coordString + ")");
+            stringList.add(coordString);
+        }
+        config.set("ender-crystal-pillar-locations", stringList);
+        NerdyDragon.PLUGIN.saveConfig();
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Returns a set of worlds in which the dragon death sound should be played.
+     * 
+     * @return a set of worlds in which the dragon death sound should be played.
+     */
+    public static HashSet<World> getMirrorWorlds() {
+        return MIRROR_DRAGON_DEATH_WORLDS.stream()
+                                         .map(Bukkit::getWorld)
+                                         .filter(Objects::nonNull)
+                                         .collect(Collectors.toCollection(HashSet::new));
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Returns the requested configuration section. If the section does not 
+     * exist, it is created.
      *
      * @param section the name of the section.
-     * @param parent the parent.
      * @return the configuration section.
      */
-    private static ConfigurationSection getOrCreateSection(String section, ConfigurationSection parent) {
-        return parent.getConfigurationSection(section) != null ? parent.getConfigurationSection(section)
-                                                               : parent.createSection(section);
+    public static ConfigurationSection getOrCreateSection(String section) {
+        FileConfiguration config = NerdyDragon.PLUGIN.getConfig();
+        return config.getConfigurationSection(section) != null ? config.getConfigurationSection(section)
+                                                               : config.createSection(section);
     }
 
 }

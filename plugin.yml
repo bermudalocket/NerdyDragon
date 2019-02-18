@@ -1,7 +1,10 @@
 name: NerdyDragon
-version: 1.3
+version: ${project.version}
 author: bermudalocket
 main: com.bermudalocket.nerdydragon.NerdyDragon
+depend: [EntityMeta]
+softdepend: [Multiverse-Core]
+api-version: 1.13
 
 permissions:
   nerdydragon.admin:
@@ -9,28 +12,28 @@ permissions:
     default: op
 
 commands:
-  nd-add:
-    description: Adds the item in the sender's main hand to the dragon loot table.
-    usage: /nd-add
+  nd-fight:
+    description: Manage the current dragon fight.
     permission: nerdydragon.admin
     permission-message: You don't have permission to do that!
-  nd-list:
-    description: Lists all of the currently loaded custom drops.
-    usage: /nd-list
-    permission: nerdydragon.admin
-    permission-message: You don't have permission to do that!
-  nd-peek:
-    description: Gives the command executor one copy of all currently loaded custom drops.
-    usage: /nd-peek
-    permission: nerdydragon.admin
-    permission-message: You don't have permission to do that!
+    usage: |
+
+      §e/<command> butcher§f - Butchers all entities summoned in this fight except the dragon and the crystals.
+      §e/<command> butcher-all§f - Butchers all entities summoned in this fight.
+      §e/<command> debug§f - Displays information about the current fight.
+      §e/<command> skip§f - Skips the current stage of the fight.
+      §e/<command> stop§f - Stops the current fight.
   nd-reload:
     description: Reloads the plugins configuration.
-    usage: /nd-reload
     permission: nerdydragon.admin
     permission-message: You don't have permission to do that!
+    usage: |
+
+      §e/<command>§f - Reloads the plugin configuration.
   nd-toggle:
     description: Toggles the state (enabled/disabled) of the plugin's actions.
-    usage: /nd-toggle
     permission: nerdydragon.admin
     permission-message: You don't have permission to do that!
+    usage: |
+
+      §e/<command>§f - Toggles the plugin state.
