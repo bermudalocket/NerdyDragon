@@ -16,9 +16,15 @@ public class AbsorbProjectileTask extends AbstractFightTask {
 
     private final EntityDamageByEntityEvent _event;
 
+    private boolean _absorbed = false;
+
     public AbsorbProjectileTask(EnderDragonFight fight, EntityDamageByEntityEvent event) {
         super(fight, true);
         _event = event;
+    }
+
+    public boolean isAbsorbed() {
+        return _absorbed;
     }
 
     @Override
@@ -31,6 +37,7 @@ public class AbsorbProjectileTask extends AbstractFightTask {
         if (dragon.getHealth() - _event.getFinalDamage() <= 0) {
             return;
         }
+        _absorbed = true;
         DragonHelper.healDragon(dragon, _event.getFinalDamage());
         AreaEffectCloud cloud = (AreaEffectCloud) Util.WORLD_THE_END.spawnEntity(dragon.getLocation(), EntityType.AREA_EFFECT_CLOUD);
         cloud.setParticle(Particle.REDSTONE, new Particle.DustOptions(Color.LIME, 1));

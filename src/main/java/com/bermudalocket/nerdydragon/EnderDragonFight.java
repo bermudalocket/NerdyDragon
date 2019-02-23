@@ -81,8 +81,6 @@ public class EnderDragonFight implements Listener {
 
     private final HashMap<UUID, Double> _attackedBy = new HashMap<>();
 
-    private final HashMap<UUID, PlayerData> _playerData = new HashMap<>();
-
     // ------------------------------------------------------------------------
     /**
      * Constructs a new Ender Dragon fight object/instance.
@@ -216,20 +214,6 @@ public class EnderDragonFight implements Listener {
                                               .stream()
                                               .map(Bukkit::getOfflinePlayer)
                                               .collect(Collectors.toSet()));
-    }
-
-    // TODO
-    // ------------------------------------------------------------------------
-    /**
-     * Returns the given player's PlayerData.
-     *
-     * @param player the player.
-     * @return the player's PlayerData.
-     */
-    public PlayerData getPlayerData(Player player) {
-        UUID uuid = player.getUniqueId();
-        PlayerData data = _playerData.get(uuid);
-        return data == null ? _playerData.put(uuid, new PlayerData(player)) : data;
     }
 
     // ------------------------------------------------------------------------
@@ -489,17 +473,17 @@ public class EnderDragonFight implements Listener {
             world.playSound(new Location(world, 0, 65, 0), Sound.ENTITY_ENDER_DRAGON_DEATH, 2500, 0.9f);
         }
 
-        String fightDuration = DurationFormatUtils.formatDuration(System.currentTimeMillis() - _commencedTimestamp, "H:mm:ss");
+        long absoluteDuration = System.currentTimeMillis() - _commencedTimestamp;
+        String fightDuration = DurationFormatUtils.formatDuration(absoluteDuration, "H:mm:ss");
 
-        //String attackers = _playerData.values()
+        String adjective = (getAttackers().size() == 1) ? "warrior" : "warriors";
         String attackers = _attackedBy.keySet()
                                       .stream()
                                       .map(Bukkit::getOfflinePlayer)
                                       .map(p -> ChatColor.DARK_PURPLE + p.getName() + ChatColor.GRAY + " (" + getDamageRatio(_attackedBy.get(p.getUniqueId())) + "%)")
-                                      //.map(playerData -> ChatColor.DARK_PURPLE + playerData.getName() + ChatColor.GRAY + " (" + getDamageRatio(playerData.getDamageInflicted()) + "%, " + playerData.getDeaths() + " deaths)")
                                       .collect(Collectors.joining(", "));
+
         for (Player player : Bukkit.getOnlinePlayers()) {
-            String adjective = (getAttackers().size() == 1) ? "warrior" : "warriors";
             NerdyDragon.message(player, "The dragon has been slain! The valiant " + adjective + " " + attackers + ChatColor.GRAY + " prevailed in " + ChatColor.DARK_PURPLE + fightDuration);
         }
 
@@ -790,6 +774,24 @@ public class EnderDragonFight implements Listener {
             // announce damage in title bar, record info about damager
             Entity damager = e.getDamager();
 
+            // nothing else happens in the first stage
+            if (_stage == FightStage.FIRST) {
+                e.setCancelled(true);
+                return;
+            }
+
+            // in stage 4, randomly absorb projectiles and/or rain fireballs
+            if (_stage == FightStage.FOURTH) {
+                if (MathUtil.cdf(0.10)) {
+                    new RainFireTask(this);
+                }
+                if (damager instanceof Projectile && MathUtil.cdf(Configuration.DRAGON_ABSORB_PROJECTILE_CHANCE)) {
+                    if (new AbsorbProjectileTask(this, e).isAbsorbed()) {
+                        return;
+                    }
+                }
+            }
+
             double finalDamage = e.getFinalDamage();
             if (_dragon.getHealth() - finalDamage < 0) {
                 finalDamage -= Math.abs(_dragon.getHealth() - finalDamage);
@@ -814,22 +816,6 @@ public class EnderDragonFight implements Listener {
             // if the dragon is dead or about to die, don't do any extra stuff
             if (_dragon.getHealth() - e.getFinalDamage() <= 10) {
                 return;
-            }
-
-            // nothing else happens in the first stage
-            if (_stage == FightStage.FIRST) {
-                e.setCancelled(true);
-                return;
-            }
-
-            // in stage 4, randomly absorb projectiles and/or rain fireballs
-            if (_stage == FightStage.FOURTH) {
-                if (damager instanceof Projectile && MathUtil.cdf(Configuration.DRAGON_ABSORB_PROJECTILE_CHANCE)) {
-                    new AbsorbProjectileTask(this, e);
-                }
-                if (MathUtil.cdf(0.10)) {
-                    new RainFireTask(this);
-                }
             }
 
             // if at portal, try to leave early
