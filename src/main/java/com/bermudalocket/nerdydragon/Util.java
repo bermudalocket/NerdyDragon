@@ -24,6 +24,21 @@ public class Util {
 
     // ------------------------------------------------------------------------
     /**
+     * Weakly compares two locations, returning true if their block (integer)
+     * coordinates are equal.
+     *
+     * @param a
+     * @param b
+     * @return
+     */
+    public static boolean weaklyCompareLocations(Location a, Location b) {
+        return a.getBlockX() == b.getBlockX()
+            && a.getBlockY() == b.getBlockY()
+            && a.getBlockZ() == b.getBlockZ();
+    }
+
+    // ------------------------------------------------------------------------
+    /**
      * Returns the head of a random admin.
      *
      * @return the head of a random admin.

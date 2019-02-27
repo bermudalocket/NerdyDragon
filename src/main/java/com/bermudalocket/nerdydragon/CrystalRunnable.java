@@ -106,17 +106,37 @@ public class CrystalRunnable implements Runnable {
      * fight world by their physical location.
      */
     private void initCrystals() {
-        for (EnderCrystal crystal : _fight.getWorld().getEntitiesByClass(EnderCrystal.class)) {
-            Location loc = crystal.getLocation().clone();
-            Block underneath = loc.getBlock().getRelative(BlockFace.DOWN);
-            if (underneath.getType() == Material.BEDROCK && crystal.getLocation().getBlockY() >= 65) {
-                Util.tagEntityWithMetadata(crystal);
-                ENDER_CRYSTALS.add(crystal);
-                NerdyDragon.log("Init crystal: " + crystal);
+        if (Configuration.ENDER_CRYSTAL_PILLAR_LOCATIONS.size() == 10) {
+            for (Location location : Configuration.ENDER_CRYSTAL_PILLAR_LOCATIONS) {
+                boolean matched = false;
+                for (EnderCrystal crystal : _fight.getWorld().getEntitiesByClass(EnderCrystal.class)) {
+                    if (Util.weaklyCompareLocations(location, crystal.getLocation())) {
+                        Util.tagEntityWithMetadata(crystal);
+                        ENDER_CRYSTALS.add(crystal);
+                        NerdyDragon.log("Init crystal: " + crystal);
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) {
+                    EnderCrystal crystal = (EnderCrystal) _fight.spawnReinforcement(location, EntityType.ENDER_CRYSTAL);
+                    ENDER_CRYSTALS.add(crystal);
+                    NerdyDragon.log("Force init crystal: " + crystal + ". Was it missing?");
+                }
             }
-        }
-        if (Configuration.ENDER_CRYSTAL_PILLAR_LOCATIONS.size() < 10) {
-            Configuration.saveEnderCrystalPillarLocations(new HashSet<>(ENDER_CRYSTALS));
+        } else {
+            for (EnderCrystal crystal : _fight.getWorld().getEntitiesByClass(EnderCrystal.class)) {
+                Location loc = crystal.getLocation().clone();
+                Block underneath = loc.getBlock().getRelative(BlockFace.DOWN);
+                if (underneath.getType() == Material.BEDROCK && crystal.getLocation().getBlockY() >= 65) {
+                    Util.tagEntityWithMetadata(crystal);
+                    ENDER_CRYSTALS.add(crystal);
+                    NerdyDragon.log("Init crystal: " + crystal);
+                }
+            }
+            if (Configuration.ENDER_CRYSTAL_PILLAR_LOCATIONS.size() < 10) {
+                Configuration.saveEnderCrystalPillarLocations(new HashSet<>(ENDER_CRYSTALS));
+            }
         }
     }
 

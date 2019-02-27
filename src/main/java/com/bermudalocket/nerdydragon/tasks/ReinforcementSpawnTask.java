@@ -83,7 +83,7 @@ public class ReinforcementSpawnTask extends AbstractFightTask {
 
     private void spawnShulker() {
         World world = getDragon().getWorld();
-        OrderedPair coords = MathUtil.getRandomCoordinates(30);
+        OrderedPair<Integer> coords = MathUtil.getRandomCoordinates(30);
         int x = coords.getA();
         int z = coords.getB();
         double y = world.getHighestBlockYAt(x, z) + 1;
@@ -93,7 +93,7 @@ public class ReinforcementSpawnTask extends AbstractFightTask {
 
     private void spawnEvokerRidingBat() {
         World world = getDragon().getWorld();
-        OrderedPair coords = MathUtil.getRandomCoordinates(30);
+        OrderedPair<Integer> coords = MathUtil.getRandomCoordinates(30);
         int x = coords.getA();
         int z = coords.getB();
         double y = world.getHighestBlockYAt(x, z) + 12;

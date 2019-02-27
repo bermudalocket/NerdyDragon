@@ -2,6 +2,7 @@ package com.bermudalocket.nerdydragon;
 
 import com.bermudalocket.nerdydragon.commands.ExecutorBase;
 import com.bermudalocket.nerdydragon.commands.FightCommand;
+import com.bermudalocket.nerdydragon.commands.LeaderboardCommand;
 import com.bermudalocket.nerdydragon.commands.PluginStateCommand;
 import com.bermudalocket.nerdydragon.commands.ReloadCommand;
 import org.bukkit.ChatColor;
@@ -29,6 +30,8 @@ public class NerdyDragon extends JavaPlugin implements Listener {
      */
     public static NerdyDragon PLUGIN;
 
+    public static Leaderboard LEADERBOARD;
+
     // ------------------------------------------------------------------------
     /**
      * The current fight, or null if one does not exist. Note that the current
@@ -46,11 +49,14 @@ public class NerdyDragon extends JavaPlugin implements Listener {
         saveDefaultConfig();
         Configuration.reload();
 
+        LEADERBOARD = new Leaderboard();
+
         getServer().getPluginManager().registerEvents(this, this);
 
         registerCommand(new ReloadCommand());
         registerCommand(new FightCommand());
         registerCommand(new PluginStateCommand());
+        registerCommand(new LeaderboardCommand());
 
         checkForExistingFight();
     }
@@ -116,7 +122,7 @@ public class NerdyDragon extends JavaPlugin implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntitySpawn(CreatureSpawnEvent e) {
-        if (!Configuration.ENABLED) {
+        if (!Configuration.ENABLED || e.getLocation().getWorld() != Util.WORLD_THE_END) {
             return;
         }
         if (e.getEntityType() == EntityType.ENDER_DRAGON) {

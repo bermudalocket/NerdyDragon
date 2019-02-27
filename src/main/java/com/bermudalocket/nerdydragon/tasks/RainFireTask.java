@@ -51,7 +51,7 @@ public class RainFireTask extends AbstractFightTask {
         Thread.newThread(6, () -> {
             _fight.playSound(Sound.ENTITY_WITHER_SPAWN, 0.7f);
             Thread.newRepeatedThread(25, 40, 5, () -> {
-                OrderedPair coords = MathUtil.getRandomCoordinates(_radius);
+                OrderedPair<Integer> coords = MathUtil.getRandomCoordinates(_radius);
                 int x = coords.getA();
                 int z = coords.getB();
                 Location loc = new Location(world, x, 150, z);

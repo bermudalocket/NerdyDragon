@@ -114,10 +114,10 @@ public class MathUtil {
      * @param radius the radius.
      * @return a random coordinate.
      */
-    public static OrderedPair getRandomCoordinates(int radius) {
+    public static OrderedPair<Integer> getRandomCoordinates(int radius) {
         int a = random(2 * radius) - radius;
         int b = random(2 * radius) - radius;
-        return new OrderedPair(a, b);
+        return new OrderedPair<>(a, b);
     }
 
     public static double round(double value) {

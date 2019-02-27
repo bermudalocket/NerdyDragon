@@ -6,7 +6,7 @@
     <groupId>com.bermudalocket</groupId>
     <name>NerdyDragon</name>
     <artifactId>NerdyDragon</artifactId>
-    <version>2.0.1</version>
+    <version>2.1.0</version>
     <packaging>jar</packaging>
     <description>Assigns and manages a custom Ender Dragon loot table.</description>
     <url>https://github.com/bermudalocket/${project.name}</url>

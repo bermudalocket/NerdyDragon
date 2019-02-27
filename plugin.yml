@@ -23,6 +23,12 @@ commands:
       §e/<command> debug§f - Displays information about the current fight.
       §e/<command> skip§f - Skips the current stage of the fight.
       §e/<command> stop§f - Stops the current fight.
+  nd-leaderboard:
+    description: Displays fight statistics.
+    usage: |
+
+      §e/<command> statistics <solo/group>§f - Shows statistics for all solo/group fights.
+      §e/<command> top <solo/group> [n = 5]§f - Shows the n fastest solo/group fight times.
   nd-reload:
     description: Reloads the plugins configuration.
     permission: nerdydragon.admin
