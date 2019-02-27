@@ -5,7 +5,10 @@ import com.bermudalocket.nerdydragon.commands.FightCommand;
 import com.bermudalocket.nerdydragon.commands.LeaderboardCommand;
 import com.bermudalocket.nerdydragon.commands.PluginStateCommand;
 import com.bermudalocket.nerdydragon.commands.ReloadCommand;
+import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.ConfigurationSection;
@@ -15,7 +18,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 // ------------------------------------------------------------------------
@@ -30,6 +35,8 @@ public class NerdyDragon extends JavaPlugin implements Listener {
      */
     public static NerdyDragon PLUGIN;
 
+    public static Configuration CONFIG;
+
     public static Leaderboard LEADERBOARD;
 
     // ------------------------------------------------------------------------
@@ -37,7 +44,7 @@ public class NerdyDragon extends JavaPlugin implements Listener {
      * The current fight, or null if one does not exist. Note that the current
      * fight might have been completed since the last restart.
      */
-    private static EnderDragonFight _currentFight;
+    private EnderDragonFight _currentFight;
 
     // ------------------------------------------------------------------------
     /**
@@ -47,7 +54,8 @@ public class NerdyDragon extends JavaPlugin implements Listener {
         PLUGIN = this;
 
         saveDefaultConfig();
-        Configuration.reload();
+        CONFIG = new Configuration();
+        CONFIG.reload();
 
         LEADERBOARD = new Leaderboard();
 
@@ -92,15 +100,15 @@ public class NerdyDragon extends JavaPlugin implements Listener {
      *
      * @return the current fight, or null if one does not exist.
      */
-    public static EnderDragonFight getCurrentFight() {
+    public EnderDragonFight getCurrentFight() {
         return _currentFight;
     }
 
     // ------------------------------------------------------------------------
     /**
-     * Clears the current fight freeing it from memory.
+     * Clears the current fight, freeing it from memory.
      */
-    static void clearCurrentFight() {
+    void clearCurrentFight() {
         _currentFight = null;
     }
 
@@ -122,7 +130,7 @@ public class NerdyDragon extends JavaPlugin implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntitySpawn(CreatureSpawnEvent e) {
-        if (!Configuration.ENABLED || e.getLocation().getWorld() != Util.WORLD_THE_END) {
+        if (!NerdyDragon.CONFIG.ENABLED || e.getLocation().getWorld() != Util.WORLD_THE_END) {
             return;
         }
         if (e.getEntityType() == EntityType.ENDER_DRAGON) {
@@ -131,6 +139,41 @@ public class NerdyDragon extends JavaPlugin implements Listener {
                 return;
             }
             Thread.newThread(() -> _currentFight = new EnderDragonFight((EnderDragon) e.getEntity()));
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Log players placing crystals.
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerPlaceCrystal(PlayerInteractEvent e) {
+        if (e.getMaterial() == Material.END_CRYSTAL && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            Player player = e.getPlayer();
+            if (player.getWorld() == Util.WORLD_THE_END && e.getClickedBlock().getType() == Material.BEDROCK) {
+                log(player.getName() + " placed a crystal at " + Util.locationToOrderedTriple(e.getClickedBlock().getLocation()));
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Prevents the dragon from being unloaded, which seems to cause silliness.
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onDragonUnload(EntityRemoveFromWorldEvent e) {
+        if (e.getEntityType() != EntityType.ENDER_DRAGON) {
+            return;
+        }
+        log("Dragon is attempting to unload (" + e.getEntity().getUniqueId().toString() + ")");
+        if (((EnderDragon) e.getEntity()).getHealth() > 0) {
+            final Location location = e.getEntity().getLocation().clone();
+            Thread.newThread(() -> {
+                if (!location.isChunkLoaded()) {
+                    log("Reloading chunk...");
+                    location.getChunk().load();
+                }
+            });
         }
     }
 

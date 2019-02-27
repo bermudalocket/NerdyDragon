@@ -16,7 +16,7 @@ public class ReloadCommand extends ExecutorBase {
         if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
             return false;
         }
-        Configuration.reload();
+        NerdyDragon.CONFIG.reload();
         NerdyDragon.message(commandSender, "NerdyDragon reloaded!");
         return true;
     }

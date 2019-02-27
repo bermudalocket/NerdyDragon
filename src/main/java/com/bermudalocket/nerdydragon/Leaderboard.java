@@ -19,8 +19,15 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+// ------------------------------------------------------------------------
+/**
+ * A class handling all leaderboard functionality, including querying and i/o.
+ */
 public class Leaderboard {
 
+    /**
+     * A reference to "../plugins/NerdyDragon/leaderboard.yml".
+     */
     private final File LEADERBOARD_FILE;
 
     /**
@@ -33,18 +40,37 @@ public class Leaderboard {
      */
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("E MMM d y hh:mm:ss a");
 
+    // ------------------------------------------------------------------------
+    /**
+     * Constructor.
+     */
     Leaderboard() {
         LEADERBOARD_FILE = new File(NerdyDragon.PLUGIN.getDataFolder().getPath() + "/leaderboard.yml");
     }
 
+    // ------------------------------------------------------------------------
+    /**
+     * Returns a freshly-loaded YamlConfiguration instance.
+     *
+     * @return a freshly-loaded YamlConfiguration instance.
+     */
     private YamlConfiguration getYAML() {
         return YamlConfiguration.loadConfiguration(LEADERBOARD_FILE);
     }
 
+    // ------------------------------------------------------------------------
+    /**
+     * Returns the YAML parent key for the given fight UUID, of the form
+     * "fight-history.[UUID]".
+     *
+     * @param fightId
+     * @return
+     */
     private static String getKey(UUID fightId) {
         return "fight-history." + fightId.toString();
     }
 
+    // ------------------------------------------------------------------------
     /**
      * Returns all fights in the fight history. If type is true, this will return
      * solo fights only. If type is false, this will return group fights only. If
@@ -67,19 +93,53 @@ public class Leaderboard {
             .collect(Collectors.toSet());
     }
 
+    // ------------------------------------------------------------------------
+    /**
+     * Returns the time the fight began as a Unix timestamp.
+     *
+     * @param fightId the fight UUID.
+     * @param yaml the YAML instance.
+     * @return the time the fight began as a Unix timestamp.
+     */
     private long getTimeStarted(UUID fightId, FileConfiguration yaml) {
         return yaml.getLong(getKey(fightId) + ".time-started", 0);
     }
 
+    // ------------------------------------------------------------------------
+    /**
+     * Returns the duration of the fight in milliseconds.
+     *
+     * @param fightId the fight UUID.
+     * @param yaml the YAML instance.
+     * @return the duration of the fight in milliseconds.
+     */
     private long getDuration(UUID fightId, FileConfiguration yaml) {
         return yaml.getLong(getKey(fightId) + ".duration", 0);
     }
 
+    // ------------------------------------------------------------------------
+    /**
+     * Returns a set of player('s names) involved in the given fight.
+     *
+     * @param fightId the fight UUID.
+     * @param yaml the YAML instance.
+     * @return a set of player('s names) involved in the given fight.
+     */
     private Set<String> getPlayers(UUID fightId, FileConfiguration yaml) {
         return yaml.getConfigurationSection(getKey(fightId) + ".players")
                    .getKeys(false);
     }
 
+    // ------------------------------------------------------------------------
+    /**
+     * Returns the overall percentage of damage done to the dragon by the given
+     * player in the given fight.
+     *
+     * @param fightId the fight UUID.
+     * @param player the player's name.
+     * @param yaml the YAML instance.
+     * @return the overall percentage of damage done by the player.
+     */
     private double getPlayerDamagePercent(UUID fightId, String player, FileConfiguration yaml) {
         return yaml.getDouble(getKey(fightId) + ".players." + player, 0);
     }
@@ -105,6 +165,16 @@ public class Leaderboard {
         return DATE_FORMAT.format(CALENDAR.getTime());
     }
 
+    // ------------------------------------------------------------------------
+    /**
+     * Returns basic statistics, currently mean and standard deviation. If solo
+     * is null, all fights will be considered; if solo is true, only solo fights
+     * will be considered; and if solo is false, only group fights will be
+     * considered.
+     *
+     * @param solo true for solo, false for group, null for all.
+     * @return a string of basic statistics.
+     */
     public String getStatistics(Boolean solo) {
         // mean duration
         YamlConfiguration yaml = getYAML();
@@ -121,12 +191,8 @@ public class Leaderboard {
         long stDev = Math.round(Math.sqrt(squaredDev)); // won't be called often
 
         return String.format("The mean is %s and the standard deviation is %s",
-            emph(DurationFormatUtils.formatDuration(mean, getHMSFormat(mean))),
-            emph(DurationFormatUtils.formatDuration(stDev, getHMSFormat(stDev))));
-    }
-
-    static String getHMSFormat(long value) {
-        return (value > 60*60*1000 ? "H'h' " : "") + "m'm' s's'";
+            emph(DurationFormatUtils.formatDuration(mean, Util.getHMSFormat(mean))),
+            emph(DurationFormatUtils.formatDuration(stDev, Util.getHMSFormat(stDev))));
     }
 
     public LinkedHashSet<String> getTop(int n, Boolean solo) {
@@ -152,7 +218,7 @@ public class Leaderboard {
                 .stream()
                 .map(player -> ChatColor.DARK_PURPLE + player + ChatColor.GRAY + " (" + getPlayerDamagePercent(fightId, player, yaml) + "%)")
                 .collect(Collectors.joining(", "));
-            results.add("#" + i + ". " + emph(DurationFormatUtils.formatDuration(duration, getHMSFormat(duration))) + " by " + playersString + " on " + emph(longToDate(time)));
+            results.add("#" + i + ". " + emph(DurationFormatUtils.formatDuration(duration, Util.getHMSFormat(duration))) + " by " + playersString + " on " + emph(longToDate(time)));
         }
         return results;
     }
@@ -164,7 +230,7 @@ public class Leaderboard {
             section = yaml.createSection("fight-history");
         }
         ConfigurationSection thisFight = section.createSection(fight.getUUID().toString());
-        thisFight.set("time-started", fight.TIME_STARTED);
+        thisFight.set("time-started", fight._timeStarted);
         thisFight.set("duration", duration);
         ConfigurationSection players = thisFight.createSection("players");
         for (OfflinePlayer offlinePlayer : fight.getAttackers()) {

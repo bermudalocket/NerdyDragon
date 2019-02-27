@@ -33,8 +33,8 @@ public class LeavePortalTask extends AbstractFightTask {
      */
     private boolean isAtPortal(EnderDragon dragon) {
         // check position
-        double x = MathUtil.floor(MathUtil.abs(dragon.getLocation().getX()));
-        double z = MathUtil.floor(MathUtil.abs(dragon.getLocation().getY()));
+        double x = Math.floor(Math.abs(dragon.getLocation().getX()));
+        double z = Math.floor(Math.abs(dragon.getLocation().getY()));
 
         // check phase
         boolean isPortalPhase = PORTAL_PHASES.contains(dragon.getPhase());

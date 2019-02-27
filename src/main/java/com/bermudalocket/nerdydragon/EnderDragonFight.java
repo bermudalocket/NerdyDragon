@@ -29,7 +29,6 @@ import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Shulker;
@@ -48,14 +47,11 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityUnleashEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.util.Vector;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -77,7 +73,7 @@ public class EnderDragonFight implements Listener {
 
     private UUID _lastDamagedBy;
 
-    final long TIME_STARTED;
+    final long _timeStarted;
 
     private final HashMap<UUID, Double> _attackedBy = new HashMap<>();
 
@@ -93,14 +89,14 @@ public class EnderDragonFight implements Listener {
         _dragon = dragon;
         NerdyDragon.log("The dragon has UUID " + dragon.getUniqueId().toString());
         _world = dragon.getWorld();
-        _bossBar = dragon.getBossBar(); // paper
+        _bossBar = dragon.getBossBar();
         _crystalRunnable = new CrystalRunnable(this);
 
         commonInit();
         Util.tagEntityWithMetadata(_dragon);
         DragonHelper.modifyAttribute(_dragon, Attribute.GENERIC_MAX_HEALTH, 0.75);
         announceStage(FightStage.FIRST);
-        TIME_STARTED = System.currentTimeMillis();
+        _timeStarted = System.currentTimeMillis();
     }
 
     // ------------------------------------------------------------------------
@@ -140,7 +136,7 @@ public class EnderDragonFight implements Listener {
         config.set("id", _id.toString());
         config.set("world-name", _world.getName());
         config.set("stage", _stage.toString());
-        config.set("started-at", TIME_STARTED);
+        config.set("started-at", _timeStarted);
         config.set("restart-at", System.currentTimeMillis());
         Chunk chunk = _dragon.getLocation().getChunk();
         config.set("dragon-chunk", chunk.getX() + "," + chunk.getZ());
@@ -221,6 +217,16 @@ public class EnderDragonFight implements Listener {
 
     // ------------------------------------------------------------------------
     /**
+     * Returns a reference to the crystal runnable, or null if it doesn't exist.
+     *
+     * @return a reference to the crystal runnable, or null if it doesn't exist.
+     */
+    public CrystalRunnable getCrystalRunnable() {
+        return _crystalRunnable;
+    }
+
+    // ------------------------------------------------------------------------
+    /**
      * Returns an immutable set of players who have damaged the dragon during
      * this fight.
      *
@@ -229,9 +235,9 @@ public class EnderDragonFight implements Listener {
      */
     public ImmutableSet<OfflinePlayer> getAttackers() {
         return ImmutableSet.copyOf(_attackedBy.keySet()
-                                              .stream()
-                                              .map(Bukkit::getOfflinePlayer)
-                                              .collect(Collectors.toSet()));
+            .stream()
+            .map(Bukkit::getOfflinePlayer)
+            .collect(Collectors.toSet()));
     }
 
     // ------------------------------------------------------------------------
@@ -260,7 +266,7 @@ public class EnderDragonFight implements Listener {
         Thread.newThread(5, () -> {
             HandlerList.unregisterAll(this);
             Bukkit.getScheduler().cancelTasks(NerdyDragon.PLUGIN);
-            NerdyDragon.clearCurrentFight();
+            NerdyDragon.PLUGIN.clearCurrentFight();
         });
     }
 
@@ -286,19 +292,20 @@ public class EnderDragonFight implements Listener {
      */
     public void removeReinforcements(boolean forced) {
         for (Entity entity : _world.getEntities()) {
-            if (Util.isReinforcement(entity)) {
-                if (entity instanceof EnderCrystal) {
-                    if (_crystalRunnable != null) {
-                        _crystalRunnable.handleCrystalDeath((EnderCrystal) entity, null);
-                    }
-                    entity.remove();
-                } else if (entity instanceof EnderDragon) {
-                    if (forced) {
-                        Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "execute in minecraft:the_end run kill @e[type=minecraft:ender_dragon]");
-                    }
-                } else {
-                    entity.remove();
+            if (!Util.isReinforcement(entity)) {
+                continue;
+            }
+            if (entity instanceof EnderCrystal) {
+                if (_crystalRunnable != null) {
+                    _crystalRunnable.handleCrystalDeath((EnderCrystal) entity, null);
                 }
+                entity.remove();
+            } else if (entity instanceof EnderDragon) {
+                if (forced) {
+                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "execute in minecraft:the_end run kill @e[type=minecraft:ender_dragon]");
+                }
+            } else {
+                entity.remove();
             }
         }
     }
@@ -319,36 +326,12 @@ public class EnderDragonFight implements Listener {
 
     // ------------------------------------------------------------------------
     /**
-     * Returns a set of EnderCrystals currently being tracked by this plugin.
+     * Returns all players within 80 blocks of the End Portal.
      *
-     * @return a set of currently-active crystals.
-     */
-    public ImmutableSet<EnderCrystal> getCrystals() {
-        return _crystalRunnable != null ? _crystalRunnable.getCrystals()
-                                        : ImmutableSet.of();
-    }
-
-    // ------------------------------------------------------------------------
-    /**
-     * Returns true if the crystal runnable is running.
-     *
-     * @return true if the crystal runnable is running.
-     */
-    public LinkedHashSet<String> getRunnableStates() {
-        boolean crystals = _crystalRunnable != null && _crystalRunnable.isRunning();
-        return new LinkedHashSet<>(Collections.singletonList(
-            "1. Crystal runnable is " + ((crystals) ? "running" : "stopped")
-        ));
-    }
-
-    // ------------------------------------------------------------------------
-    /**
-     * Returns all players within 180 blocks of the End Portal.
-     *
-     * @return all players within 180 blocks of the End Portal.
+     * @return all players within 80 blocks of the End Portal.
      */
     public HashSet<Player> getNearbyPlayers() {
-        return new HashSet<>(_world.getNearbyPlayers(_center, 180));
+        return new HashSet<>(_world.getNearbyPlayers(_center, 80));
     }
 
     // ------------------------------------------------------------------------
@@ -422,8 +405,36 @@ public class EnderDragonFight implements Listener {
      * @param stage the next stage.
      */
     private void announceStage(FightStage stage) {
-        _world.playSound(Util.END_SPAWN, Sound.ENTITY_ENDER_DRAGON_AMBIENT, 10, 1);
+        playSound(Sound.ENTITY_ENDER_DRAGON_AMBIENT, 1);
         getNearbyPlayers().forEach(player -> player.sendTitle(stage.DISPLAY_NAME, "", 15, 20 * 4, 25));
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Sends an action bar alert to all nearby players.
+     *
+     * @param msg the message to send via the action bar.
+     */
+    private void alertPlayers(String msg) {
+        for (Player player : getNearbyPlayers()) {
+            player.sendActionBar(ChatColor.WHITE.toString() + msg);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Records damage dealt by the given player.
+     *
+     * @param player the player.
+     * @param damage the damage.
+     */
+    private void recordDamage(Player player, double damage) {
+        UUID uuid = player.getUniqueId();
+        if (_attackedBy.containsKey(uuid)) {
+            _attackedBy.put(uuid, damage + _attackedBy.get(uuid));
+        } else {
+            _attackedBy.put(uuid, damage);
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -486,7 +497,7 @@ public class EnderDragonFight implements Listener {
             }
         }
         if (getsLoot != null) {
-            for (ItemStack loot : Configuration.getLoot()) {
+            for (ItemStack loot : NerdyDragon.CONFIG.getLoot()) {
                 if (getsLoot.getInventory().addItem(loot).size() == 0) {
                     NerdyDragon.message(getsLoot, "Check your inventory for your loot! (" + loot.getAmount() + "x " + loot.getType().toString() + ")");
                 } else {
@@ -497,28 +508,28 @@ public class EnderDragonFight implements Listener {
         } else {
             NerdyDragon.log("Dragon death: no specific killer found or they're offline or dead. Dropping loot naturally.");
             e.getDrops().clear();
-            e.getDrops().addAll(Configuration.getLoot());
+            e.getDrops().addAll(NerdyDragon.CONFIG.getLoot());
         }
 
         // play death sound in mirrored worlds
-        for (World world : Configuration.getMirrorWorlds()) {
+        for (World world : NerdyDragon.CONFIG.getMirrorWorlds()) {
             world.playSound(new Location(world, 0, 65, 0), Sound.ENTITY_ENDER_DRAGON_DEATH, 2500, 0.9f);
         }
 
-        long absoluteDuration = System.currentTimeMillis() - TIME_STARTED;
-        String fightDuration = DurationFormatUtils.formatDuration(absoluteDuration, Leaderboard.getHMSFormat(absoluteDuration));
-
+        // calculate duration and build victory message
+        long absoluteDuration = System.currentTimeMillis() - _timeStarted;
+        String fightDuration = DurationFormatUtils.formatDuration(absoluteDuration, Util.getHMSFormat(absoluteDuration));
         String adjective = (getAttackers().size() == 1) ? "warrior" : "warriors";
         String attackers = _attackedBy.keySet()
                                       .stream()
                                       .map(Bukkit::getOfflinePlayer)
                                       .map(p -> ChatColor.DARK_PURPLE + p.getName() + ChatColor.GRAY + " (" + DragonHelper.getDamageRatio(_attackedBy.get(p.getUniqueId()), _dragon) + "%)")
                                       .collect(Collectors.joining(", "));
-
         for (Player player : Bukkit.getOnlinePlayers()) {
             NerdyDragon.message(player, "The dragon has been slain! The valiant " + adjective + " " + attackers + ChatColor.GRAY + " prevailed in " + ChatColor.DARK_PURPLE + fightDuration);
         }
 
+        // record this fight into history
         NerdyDragon.LEADERBOARD.add(this, absoluteDuration);
 
         // debug
@@ -536,21 +547,20 @@ public class EnderDragonFight implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     protected void onEntityUnleash(EntityUnleashEvent e) {
-        if (Util.isReinforcement(e.getEntity())) {
-            if (e.getReason() == EntityUnleashEvent.UnleashReason.HOLDER_GONE) {
-                final Location pos = e.getEntity().getLocation().clone();
-                Thread.newThread(() -> {
-                    for (Entity entity : pos.getNearbyEntities(10, 10, 10)) { // 5x5x5 box
-                        if (entity instanceof Item) {
-                            Item item = (Item) entity;
-                            if (item.getItemStack().getType() == Material.LEAD) {
-                                entity.remove();
-                            }
-                        }
-                    }
-                });
-            }
+        if (!Util.isReinforcement(e.getEntity()) || e.getReason() != EntityUnleashEvent.UnleashReason.HOLDER_GONE) {
+            return;
         }
+        final Location pos = e.getEntity().getLocation().clone();
+        Thread.newThread(() -> {
+            for (Entity entity : pos.getNearbyEntities(3, 6, 3)) {
+                if (entity instanceof Item) {
+                    Item item = (Item) entity;
+                    if (item.getItemStack().getType() == Material.LEAD) {
+                        entity.remove();
+                    }
+                }
+            }
+        });
     }
 
     // ------------------------------------------------------------------------
@@ -624,14 +634,9 @@ public class EnderDragonFight implements Listener {
      */
     @EventHandler
     public void onAreaEffectCloudApplyEvent(AreaEffectCloudApplyEvent event) {
-        for (LivingEntity victim : event.getAffectedEntities()) {
-            if (Util.isReinforcement(victim)) {
-                victim.getActivePotionEffects()
-                      .stream()
-                      .map(PotionEffect::getType)
-                      .forEach(victim::removePotionEffect);
-            }
-        }
+        event.getAffectedEntities().stream()
+            .filter(Util::isReinforcement)
+            .forEach(PotionEffectHelper::removePotionEffects);
     }
 
     // ------------------------------------------------------------------------
@@ -653,12 +658,12 @@ public class EnderDragonFight implements Listener {
             Location targetLoc = target.getLocation();
             Location dragonLoc = _dragon.getEyeLocation();
             Vector farEnoughAhead = dragonLoc.toVector().clone()
-                                             .add(dragonLoc.getDirection()
-                                             .multiply(4));
+                .add(dragonLoc.getDirection()
+                .multiply(4));
             Vector dP = targetLoc.toVector().clone()
-                                 .subtract(farEnoughAhead)
-                                 .normalize()
-                                 .multiply(0.75);
+                .subtract(farEnoughAhead)
+                .normalize()
+                .multiply(0.75);
             DragonFireball fireball = _dragon.launchProjectile(DragonFireball.class, dP);
             fireball.setDirection(dP);
         });
@@ -781,10 +786,15 @@ public class EnderDragonFight implements Listener {
             return;
         }
 
+        // crystals
         if (e.getEntityType() == EntityType.ENDER_CRYSTAL) {
             EnderCrystal crystal = (EnderCrystal) e.getEntity();
+
+            // if it's not the master crystal, don't blow up
             if (crystal != _crystalRunnable.getMasterCrystal()) {
                 e.setCancelled(true);
+
+            // otherwise go for it
             } else {
                 if (Util.isFlying(player)) {
                     player.sendActionBar(ChatColor.RED.toString() + "The crystal absorbed the impact!");
@@ -794,6 +804,8 @@ public class EnderDragonFight implements Listener {
                 _crystalRunnable.handleCrystalDeath(crystal, player);
                 alertPlayers(player.getName() + " destroyed a crystal");
             }
+
+        // dragon
         } else if (e.getEntityType() == EntityType.ENDER_DRAGON) {
             // announce damage in title bar, record info about damager
             Entity damager = e.getDamager();
@@ -810,7 +822,7 @@ public class EnderDragonFight implements Listener {
                     if (MathUtil.cdf(0.10)) {
                         new RainFireTask(this);
                     }
-                    if (damager instanceof Projectile && MathUtil.cdf(Configuration.DRAGON_ABSORB_PROJECTILE_CHANCE)) {
+                    if (damager instanceof Projectile && MathUtil.cdf(0.33)) {
                         if (new AbsorbProjectileTask(this, e).isAbsorbed()) {
                             return;
                         }
@@ -822,7 +834,7 @@ public class EnderDragonFight implements Listener {
             if (_dragon.getHealth() - finalDamage < 0) {
                 finalDamage -= Math.abs(_dragon.getHealth() - finalDamage);
             }
-            finalDamage = MathUtil.round(finalDamage * 100.0) / 100.0;
+            finalDamage = Math.round(finalDamage * 100.0) / 100.0;
             if (damager instanceof Player) {
                 _lastDamagedBy = damager.getUniqueId();
                 recordDamage((Player) damager, finalDamage);
@@ -857,33 +869,14 @@ public class EnderDragonFight implements Listener {
                 new ReinforcementSpawnTask(this);
             }
         }
-
     } // onEntityDamageByEntity
-
-    private void alertPlayers(String msg) {
-        for (Player player : getNearbyPlayers()) {
-            player.sendActionBar(ChatColor.WHITE.toString() + msg);
-        }
-    }
 
     // ------------------------------------------------------------------------
     /**
-     * Records damage dealt by the given player.
-     *
-     * @param player the player.
-     * @param damage the damage.
+     * Deserializing constructor.
      */
-    private void recordDamage(Player player, double damage) {
-        UUID uuid = player.getUniqueId();
-        if (_attackedBy.containsKey(uuid)) {
-            _attackedBy.put(uuid, damage + _attackedBy.get(uuid));
-        } else {
-            _attackedBy.put(uuid, damage);
-        }
-    }
-
     EnderDragonFight(ConfigurationSection config) {
-        TIME_STARTED = config.getLong("started-at", 0) + (System.currentTimeMillis() - config.getLong("restart-at", 0));
+        _timeStarted = config.getLong("started-at", 0) + (System.currentTimeMillis() - config.getLong("restart-at", 0));
 
         String uuidAsString = config.getString("id");
         _id = UUID.fromString(uuidAsString);

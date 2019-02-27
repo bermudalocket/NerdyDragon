@@ -76,14 +76,6 @@ public class MathUtil {
         return mean + stdev*RANDOM.nextGaussian();
     }
 
-    public static int floor(double value) {
-        return (int) java.lang.Math.floor(value);
-    }
-
-    public static double abs(double value) {
-        return value < 0 ? -1*value : value;
-    }
-
     // ------------------------------------------------------------------------
     /**
      * Returns a random object from the given collection.
@@ -118,10 +110,6 @@ public class MathUtil {
         int a = random(2 * radius) - radius;
         int b = random(2 * radius) - radius;
         return new OrderedPair<>(a, b);
-    }
-
-    public static double round(double value) {
-        return java.lang.Math.round(value);
     }
 
 }

@@ -1,6 +1,5 @@
 package com.bermudalocket.nerdydragon.tasks;
 
-import com.bermudalocket.nerdydragon.Configuration;
 import com.bermudalocket.nerdydragon.EnderDragonFight;
 import com.bermudalocket.nerdydragon.MathUtil;
 import com.bermudalocket.nerdydragon.Thread;
@@ -25,11 +24,8 @@ public class RainFireTask extends AbstractFightTask {
 
     private static long _lastRan = 0;
 
-    private final int _radius;
-
     public RainFireTask(EnderDragonFight fight) {
         super(fight, true);
-        _radius = Configuration.RAIN_FIRE_RADIUS;
     }
 
     @Override
@@ -51,7 +47,7 @@ public class RainFireTask extends AbstractFightTask {
         Thread.newThread(6, () -> {
             _fight.playSound(Sound.ENTITY_WITHER_SPAWN, 0.7f);
             Thread.newRepeatedThread(25, 40, 5, () -> {
-                OrderedPair<Integer> coords = MathUtil.getRandomCoordinates(_radius);
+                OrderedPair<Integer> coords = MathUtil.getRandomCoordinates(40);
                 int x = coords.getA();
                 int z = coords.getB();
                 Location loc = new Location(world, x, 150, z);

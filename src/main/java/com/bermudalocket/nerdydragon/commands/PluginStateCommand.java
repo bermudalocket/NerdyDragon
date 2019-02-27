@@ -1,6 +1,6 @@
 package com.bermudalocket.nerdydragon.commands;
 
-import com.bermudalocket.nerdydragon.Configuration;
+import com.bermudalocket.nerdydragon.NerdyDragon;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
@@ -19,11 +19,11 @@ public class PluginStateCommand extends ExecutorBase {
         if (args.length >= 1 && args[0].equalsIgnoreCase("help")) {
             return false;
         }
-        if (Configuration.ENABLED) {
-            Configuration.setEnabled(false);
+        if (NerdyDragon.CONFIG.ENABLED) {
+            NerdyDragon.CONFIG.setEnabled(false);
             msg(sender, "Plugin soft-disabled.");
         } else {
-            Configuration.setEnabled(true);
+            NerdyDragon.CONFIG.setEnabled(true);
             msg(sender, "Plugin enabled!");
         }
         return true;

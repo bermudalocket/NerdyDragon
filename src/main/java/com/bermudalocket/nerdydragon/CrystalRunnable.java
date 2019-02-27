@@ -18,25 +18,61 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.HashSet;
 import java.util.UUID;
 
+// ------------------------------------------------------------------------
+/**
+ * This is essentially a ticking clock with two distinct divisons: a main
+ * "thread" which ticks every tick, and a "sub-thread" which ticks only when
+ * its counter is positively nonzero.
+ *
+ * The main thread is a countdown until the next major action. For example,
+ * let _mainDelay = 30. Then every time the clock ticks the -- operator is
+ * applied, eventually reaching zero and firing off a major task (usually
+ * choosing a new Master Crystal).
+ *
+ * The sub-thread is a countdown between minor actions, such as the delay
+ * between each cycle of the "searching for master" process, i.e. when the
+ * crystals randomly point their beams every 10 ticks.
+ */
 public class CrystalRunnable implements Runnable {
 
-    private int _currentDelay;
+    private int _mainDelay;
 
-    private int _actionDelay = 1;
+    private int _subDelay = 1;
 
+    /**
+     * The current state of the clock.
+     */
     private CrystalState _state = CrystalState.SEARCHING_FOR_MASTER;
 
+    /**
+     * The player currently being targeted by the crystals. Usually null.
+     */
     private Player _target;
 
+    /**
+     * The set of active crystals.
+     */
     private final HashSet<EnderCrystal> ENDER_CRYSTALS = new HashSet<>();
 
+    /**
+     * The current Master Crystal.
+     */
     private EnderCrystal _masterCrystal;
 
+    /**
+     * The associated fight. Injected during construction.
+     */
     private final EnderDragonFight _fight;
 
+    /**
+     * A reference to the underlying clock/BukkitTask.
+     */
     private BukkitTask _task;
 
-    enum CrystalState {
+    /**
+     * Possible states.
+     */
+    public enum CrystalState {
         SEARCHING_FOR_MASTER,
         FOCUS_ON_MASTER,
         ATTACK_PLAYER
@@ -49,13 +85,13 @@ public class CrystalRunnable implements Runnable {
     CrystalRunnable(EnderDragonFight fight) {
         _fight = fight;
         initCrystals();
-        _currentDelay = 20 * MathUtil.random(9, 14);
+        _mainDelay = 20 * MathUtil.random(9, 14);
         _task = Bukkit.getScheduler().runTaskTimer(NerdyDragon.PLUGIN, this, 1, 1);
     }
 
     // ------------------------------------------------------------------------
     /**
-     * Constructor. Schedules and begins this runnable with Bukkit.
+     * Deserializing constructor.
      */
     CrystalRunnable(EnderDragonFight fight, ConfigurationSection config) {
         _fight = fight;
@@ -67,8 +103,8 @@ public class CrystalRunnable implements Runnable {
             _state = CrystalState.SEARCHING_FOR_MASTER;
             _target = null;
         }
-        _currentDelay = config.getInt("current-delay", 20 * MathUtil.random(9, 14));
-        _actionDelay = config.getInt("action-delay", 0);
+        _mainDelay = config.getInt("current-delay", 20 * MathUtil.random(9, 14));
+        _subDelay = config.getInt("action-delay", 0);
         _task = Bukkit.getScheduler().runTaskTimer(NerdyDragon.PLUGIN, this, 1, 1);
     }
 
@@ -85,8 +121,8 @@ public class CrystalRunnable implements Runnable {
         }
         crystalSection.set("state", _state.toString());
         crystalSection.set("target", (_target != null) ? _target.getUniqueId().toString() : null);
-        crystalSection.set("current-delay", _currentDelay);
-        crystalSection.set("action-delay", _actionDelay);
+        crystalSection.set("current-delay", _mainDelay);
+        crystalSection.set("action-delay", _subDelay);
         NerdyDragon.PLUGIN.saveConfig();
     }
 
@@ -106,8 +142,8 @@ public class CrystalRunnable implements Runnable {
      * fight world by their physical location.
      */
     private void initCrystals() {
-        if (Configuration.ENDER_CRYSTAL_PILLAR_LOCATIONS.size() == 10) {
-            for (Location location : Configuration.ENDER_CRYSTAL_PILLAR_LOCATIONS) {
+        if (NerdyDragon.CONFIG.ENDER_CRYSTAL_PILLAR_LOCATIONS.size() == 10) {
+            for (Location location : NerdyDragon.CONFIG.ENDER_CRYSTAL_PILLAR_LOCATIONS) {
                 boolean matched = false;
                 for (EnderCrystal crystal : _fight.getWorld().getEntitiesByClass(EnderCrystal.class)) {
                     if (Util.weaklyCompareLocations(location, crystal.getLocation())) {
@@ -134,8 +170,8 @@ public class CrystalRunnable implements Runnable {
                     NerdyDragon.log("Init crystal: " + crystal);
                 }
             }
-            if (Configuration.ENDER_CRYSTAL_PILLAR_LOCATIONS.size() < 10) {
-                Configuration.saveEnderCrystalPillarLocations(new HashSet<>(ENDER_CRYSTALS));
+            if (NerdyDragon.CONFIG.ENDER_CRYSTAL_PILLAR_LOCATIONS.size() < 10) {
+                NerdyDragon.CONFIG.saveEnderCrystalPillarLocations(new HashSet<>(ENDER_CRYSTALS));
             }
         }
     }
@@ -160,7 +196,7 @@ public class CrystalRunnable implements Runnable {
         if (ENDER_CRYSTALS.size() >= 10) {
             return;
         }
-        HashSet<Location> generationSpots = new HashSet<>(Configuration.ENDER_CRYSTAL_PILLAR_LOCATIONS);
+        HashSet<Location> generationSpots = new HashSet<>(NerdyDragon.CONFIG.ENDER_CRYSTAL_PILLAR_LOCATIONS);
         for (EnderCrystal crystal : ENDER_CRYSTALS) {
             Location loc = crystal.getLocation();
             generationSpots.removeIf(regenSpot -> loc.getBlockX() == regenSpot.getBlockX()
@@ -182,7 +218,7 @@ public class CrystalRunnable implements Runnable {
      *
      * @return an immutable set of the current crystals.
      */
-    ImmutableSet<EnderCrystal> getCrystals() {
+    public ImmutableSet<EnderCrystal> getCrystals() {
         return ImmutableSet.copyOf(ENDER_CRYSTALS);
     }
 
@@ -192,7 +228,7 @@ public class CrystalRunnable implements Runnable {
      *
      * @return the current master crystal.
      */
-    EnderCrystal getMasterCrystal() {
+    public EnderCrystal getMasterCrystal() {
         return _masterCrystal;
     }
 
@@ -225,7 +261,7 @@ public class CrystalRunnable implements Runnable {
                 DragonHelper.chargePlayer(player, _fight);
                 _target = player;
                 _state = CrystalState.ATTACK_PLAYER;
-                _currentDelay = 20*3 + 1;
+                _mainDelay = 20 * 3 + 1;
             }
         }
     }
@@ -251,8 +287,8 @@ public class CrystalRunnable implements Runnable {
     }
 
     private void doAction() {
-        if (_actionDelay != 0) {
-            _actionDelay--;
+        if (_subDelay != 0) {
+            _subDelay--;
             return;
         }
         switch (_state) {
@@ -261,12 +297,12 @@ public class CrystalRunnable implements Runnable {
                 for (EnderCrystal crystal : ENDER_CRYSTALS) {
                     crystal.setBeamTarget(getRandomCrystal(crystal).getLocation());
                 }
-                _actionDelay = 10;
+                _subDelay = 10;
                 break;
 
             case FOCUS_ON_MASTER:
                 // crystals focusing on the master crystal do nothing after
-                // their beam is set until the _currentDelay runs out
+                // their beam is set until the _mainDelay runs out
                 break;
 
             case ATTACK_PLAYER:
@@ -287,7 +323,7 @@ public class CrystalRunnable implements Runnable {
 
     @Override
     public void run() {
-        if (_currentDelay != 0) {
+        if (_mainDelay != 0) {
             doAction();
         } else {
             // change state
@@ -307,14 +343,14 @@ public class CrystalRunnable implements Runnable {
                             crystal.setBeamTarget(crystal.getLocation().add(0,15,0));
                         }
                     }
-                    _currentDelay = 20 * MathUtil.random(30, 50);
+                    _mainDelay = 20 * MathUtil.random(30, 50);
                     return;
 
                 // time ran out and the player(s) did not blow up a crystal
                 case FOCUS_ON_MASTER:
                     regenerateCrystal();
                     _state = CrystalState.SEARCHING_FOR_MASTER;
-                    _currentDelay = 20 * MathUtil.random(12, 18);
+                    _mainDelay = 20 * MathUtil.random(12, 18);
                     return;
 
                 // crystals are done focusing on the player & are ready to deal damage
@@ -325,12 +361,13 @@ public class CrystalRunnable implements Runnable {
                         _target.removePotionEffect(PotionEffectType.LEVITATION);
                     }
                     _state = CrystalState.SEARCHING_FOR_MASTER;
-                    _currentDelay = 20 * MathUtil.random(12, 18);
+                    _mainDelay = 20 * MathUtil.random(12, 18);
+                    _target = null;
                     return;
             }
         }
 
-        _currentDelay--;
+        _mainDelay--;
     }
 
 }

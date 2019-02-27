@@ -15,21 +15,37 @@ import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.UUID;
 
+// ------------------------------------------------------------------------
+/**
+ * A utilities class containing global methods that aren't better placed
+ * elsewhere.
+ */
 public class Util {
 
-    public static final World WORLD_THE_END = Bukkit.getWorld("world_the_end");
-
-    public static final Location END_SPAWN = new Location(WORLD_THE_END, 0, 55, 0);
+    // ------------------------------------------------------------------------
+    /**
+     * Determines and returns the most appropriate HMS format for the given
+     * long, assuming the long is in milliseconds. If the value of the long
+     * represents a duration of more than an hour, "Hms" will be returned;
+     * otherwise, "ms" will be returned.
+     *
+     * @param value the timestamp value in milliseconds.
+     * @return the most appropriate HMS format.
+     */
+    public static String getHMSFormat(long value) {
+        return (value > 60*60*1000 ? "H'h' " : "") + "m'm' s's'";
+    }
 
     // ------------------------------------------------------------------------
     /**
      * Weakly compares two locations, returning true if their block (integer)
      * coordinates are equal.
      *
-     * @param a
-     * @param b
-     * @return
+     * @param a the first location.
+     * @param b the second location.
+     * @return true if the locations are weakly comparable.
      */
     public static boolean weaklyCompareLocations(Location a, Location b) {
         return a.getBlockX() == b.getBlockX()
@@ -103,14 +119,14 @@ public class Util {
     /**
      * Returns the given player's head as an ItemStack.
      *
-     * @param player the player.
+     * @param playerUUID the UUID of the player.
      * @return the given player's head as an ItemStack.
      */
-    @SuppressWarnings("deprecation")
-    public static ItemStack getPlayerHead(String player) {
+    public static ItemStack getPlayerHead(String playerUUID) {
+        UUID uuid = UUID.fromString(playerUUID);
         ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta skullMeta = (SkullMeta) itemStack.getItemMeta();
-        skullMeta.setOwningPlayer(Bukkit.getOfflinePlayer(player));
+        skullMeta.setOwningPlayer(Bukkit.getOfflinePlayer(uuid));
         itemStack.setItemMeta(skullMeta);
         return itemStack;
     }
@@ -140,12 +156,28 @@ public class Util {
         EntityMeta.api().set(entity, NerdyDragon.PLUGIN, METADATA_KEY, "true");
     }
 
+    /**
+     * A reference to The End, used as a default-world fallback.
+     */
+    public static final World WORLD_THE_END = Bukkit.getWorld("world_the_end");
+
+    /**
+     * This plugin's EntityMeta metadata key.
+     */
     private static final String METADATA_KEY = "dragon-fight";
 
+    /**
+     * A set of admin names from which Vex heads are randomly chosen.
+     */
     private static final HashSet<String> ADMINS = new HashSet<>(Arrays.asList(
-        "pez252", "ttsci", "defiex",
-        "cujobear", "Flumper", "kumquatmay",
-        "bermudalocket", "totemo"
+        "1f5abb89-9f4f-4571-8599-a56ef4982840", // pez252
+        "70346d9c-14dd-472c-89aa-e2cd1e223f61", // ttsci
+        "5466a9cf-a22a-4574-b30f-aaa6aebd712e", // defiex
+        "7a9c5824-a3b5-4105-8b1c-90ae1e2acd7e", // cujobear
+        "e3675cb9-ff31-49b2-bb7c-47fbb021ec16", // flumper
+        "d908f8ff-07ed-4e8d-a8b5-e4275866812b", // kumquatmay
+        "e3501dfb-9513-47c8-9e55-965f88325ff7", // bermudalocket
+        "8a2182fb-bc2f-440f-87d0-a889c7832e78" // totemo
     ));
 
 }

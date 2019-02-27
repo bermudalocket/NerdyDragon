@@ -1,5 +1,6 @@
 package com.bermudalocket.nerdydragon.commands;
 
+import com.bermudalocket.nerdydragon.CrystalRunnable;
 import com.bermudalocket.nerdydragon.EnderDragonFight;
 import com.bermudalocket.nerdydragon.FightStage;
 import com.bermudalocket.nerdydragon.NerdyDragon;
@@ -21,7 +22,7 @@ public class FightCommand extends ExecutorBase {
             return false;
         }
 
-        EnderDragonFight fight = NerdyDragon.getCurrentFight();
+        EnderDragonFight fight = NerdyDragon.PLUGIN.getCurrentFight();
         if (fight == null) {
             sender.sendMessage(ChatColor.RED + "A fight does not currently exist.");
             return true;
@@ -51,13 +52,13 @@ public class FightCommand extends ExecutorBase {
                 msg(sender, "The most recent fight has already finished.");
             }
         } else if (arg.equalsIgnoreCase("debug")) {
+            CrystalRunnable runnable = fight.getCrystalRunnable();
             msg(sender, "The UUID of this fight is " + fight.getUUID().toString() + ".");
             msg(sender, "The fight is in stage " + fight.getStage().toString() + ".");
-            msg(sender, "Status of runnables: ");
-            fight.getRunnableStates().forEach(s -> msg(sender, s));
-            msg(sender, "There are currently " + fight.getCrystals().size() + " crystals being tracked: ");
+            msg(sender, "Crystal runnable is " + (runnable.isRunning() ? "running" : "stopped"));
+            msg(sender, "There are currently " + runnable.getCrystals().size() + " crystals being tracked: ");
             int i = 1;
-            for (EnderCrystal crystal : fight.getCrystals()) {
+            for (EnderCrystal crystal : runnable.getCrystals()) {
                 msg(sender, i + ". " + Util.locationToOrderedTriple(crystal.getLocation()));
                 i++;
             }
