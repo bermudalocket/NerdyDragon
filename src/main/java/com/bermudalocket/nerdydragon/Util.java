@@ -154,6 +154,8 @@ public class Util {
      */
     static void tagEntityWithMetadata(Entity entity) {
         EntityMeta.api().set(entity, NerdyDragon.PLUGIN, METADATA_KEY, "true");
+        // yes yes i know that's a string
+        // i had... issues
     }
 
     /**

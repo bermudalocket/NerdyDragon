@@ -4,6 +4,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.boss.BarColor;
 
+// ------------------------------------------------------------------------
+/**
+ * Isn't it stunning?
+ */
 public enum FightStage {
 
          // 1      2    3   4  5  6   7    8    9     10    11    12            13               14  15

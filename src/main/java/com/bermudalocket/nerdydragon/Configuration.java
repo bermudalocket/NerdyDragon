@@ -33,12 +33,20 @@ public class Configuration {
     /**
      * The set of worlds in which the dragon death sound will be played.
      */
-    public HashSet<UUID> MIRROR_DRAGON_DEATH_WORLDS = new HashSet<>();
+    private HashSet<UUID> MIRROR_DRAGON_DEATH_WORLDS = new HashSet<>();
 
     /**
      * The locations at which the End Crystals spawn at the start of a dragon fight.
      */
-    public HashSet<Location> ENDER_CRYSTAL_PILLAR_LOCATIONS = new HashSet<>();
+    HashSet<Location> ENDER_CRYSTAL_PILLAR_LOCATIONS = new HashSet<>();
+
+    // ------------------------------------------------------------------------
+    /**
+     * Constructor.
+     */
+    public Configuration() {
+        reload();
+    }
 
     // ------------------------------------------------------------------------
     /**
@@ -46,6 +54,7 @@ public class Configuration {
      */
     public void reload() {
         NerdyDragon.log("Reloading configuration.");
+        NerdyDragon.PLUGIN.saveDefaultConfig();
         NerdyDragon.PLUGIN.reloadConfig();
         FileConfiguration config = NerdyDragon.PLUGIN.getConfig();
 
@@ -88,7 +97,7 @@ public class Configuration {
      *
      * @return the loot.
      */
-    public ImmutableSet<ItemStack> getLoot() {
+    ImmutableSet<ItemStack> getLoot() {
         ItemStack wings = new ItemStack(Material.ELYTRA, 1);
         ItemMeta meta = wings.getItemMeta();
         meta.setLore(Collections.singletonList(ChatColor.DARK_PURPLE + "I Survived The Dragon Fight!"));
@@ -103,7 +112,7 @@ public class Configuration {
      *
      * @param locations the locations to save.
      */
-    public void saveEnderCrystalPillarLocations(HashSet<EnderCrystal> locations) {
+    void saveEnderCrystalPillarLocations(HashSet<EnderCrystal> locations) {
         ENDER_CRYSTAL_PILLAR_LOCATIONS.clear();
         FileConfiguration config = NerdyDragon.PLUGIN.getConfig();
         List<String> stringList = new ArrayList<>();
@@ -124,7 +133,7 @@ public class Configuration {
      *
      * @return a set of worlds in which the dragon death sound should be played.
      */
-    public HashSet<World> getMirrorWorlds() {
+    HashSet<World> getMirrorWorlds() {
         return MIRROR_DRAGON_DEATH_WORLDS.stream()
             .map(Bukkit::getWorld)
             .filter(Objects::nonNull)
@@ -139,7 +148,7 @@ public class Configuration {
      * @param key the name of the section.
      * @return the configuration section.
      */
-    public static ConfigurationSection getOrCreateSection(String key) {
+    static ConfigurationSection getOrCreateSection(String key) {
         FileConfiguration config = NerdyDragon.PLUGIN.getConfig();
         ConfigurationSection section = config.getConfigurationSection(key);
         if (section == null) {

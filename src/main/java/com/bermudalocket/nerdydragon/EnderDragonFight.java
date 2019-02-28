@@ -55,26 +55,64 @@ import java.util.HashSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+// ------------------------------------------------------------------------
+/**
+ * Represents an instance of an EnderDragon fight.
+ */
 public class EnderDragonFight implements Listener {
 
+    /**
+     * This fight's unique identifier.
+     */
     private final UUID _id;
 
+    /**
+     * A reference to the summoned dragon.
+     */
     private EnderDragon _dragon;
 
+    /**
+     * This fight's current stage.
+     */
     private FightStage _stage = FightStage.FIRST;
 
+    /**
+     * A timer runnable which facilitates the crystal stage. May be null if
+     * the crystal stage is not in progress.
+     */
     private CrystalRunnable _crystalRunnable;
 
+    /**
+     * The dragon's boss bar.
+     */
     private BossBar _bossBar;
 
+    /**
+     * The world in which the fight is occurring.
+     */
     private final World _world;
 
+    /**
+     * The topmost block at the center of the exit portal.
+     */
     private Location _center;
 
+    /**
+     * The UUID of the last player to damage the dragon. Used for awarding
+     * drops if the dragon's killer is null (e.g. if killed with an arrow).
+     */
     private UUID _lastDamagedBy;
 
+    /**
+     * The unix timestamp recorded at the very beginning of this fight. Used
+     * to time the fight.
+     */
     final long _timeStarted;
 
+    /**
+     * A record mapping from player UUID to the amount of damage they have
+     * inflicted on the dragon during this fight.
+     */
     private final HashMap<UUID, Double> _attackedBy = new HashMap<>();
 
     // ------------------------------------------------------------------------
@@ -123,6 +161,22 @@ public class EnderDragonFight implements Listener {
         Bukkit.getPluginManager().registerEvents(this, NerdyDragon.PLUGIN);
         _bossBar.setColor(_stage.BOSS_BAR_COLOR);
         _bossBar.setStyle(BarStyle.SEGMENTED_20);
+        setChunkStates(true);
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Set chunks to force-load at the start of a fight, and then undo this
+     * at the end of the fight. Prevents the dragon from unloading.
+     *
+     * @param loaded true to force-load; false to release.
+     */
+    private void setChunkStates(boolean loaded) {
+        for (int i = -4; i <= 4; i++) {
+            for (int j = -4; j <= 4; j++) {
+                _world.getChunkAt(i, j).setForceLoaded(loaded);
+            }
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -233,7 +287,7 @@ public class EnderDragonFight implements Listener {
      * @return an immutable set of players who have damaged the dragon during
      *         this fight.
      */
-    public ImmutableSet<OfflinePlayer> getAttackers() {
+    ImmutableSet<OfflinePlayer> getAttackers() {
         return ImmutableSet.copyOf(_attackedBy.keySet()
             .stream()
             .map(Bukkit::getOfflinePlayer)
@@ -247,7 +301,7 @@ public class EnderDragonFight implements Listener {
      * @param uuid the player's UUID.
      * @return the damage done by the given player during this fight.
      */
-    public double getDamage(UUID uuid) {
+    double getDamage(UUID uuid) {
         return _attackedBy.get(uuid);
     }
 
@@ -259,14 +313,15 @@ public class EnderDragonFight implements Listener {
      */
     public void endFight(boolean forced) {
         if (_crystalRunnable != null) {
-            _crystalRunnable.stop(); // just in case they didn't get past stage 1
+            _crystalRunnable.stop();
         }
         removeReinforcements(forced);
         _stage = FightStage.FINISHED;
         Thread.newThread(5, () -> {
+            setChunkStates(false);
             HandlerList.unregisterAll(this);
             Bukkit.getScheduler().cancelTasks(NerdyDragon.PLUGIN);
-            NerdyDragon.PLUGIN.clearCurrentFight();
+            NerdyDragon.FIGHT = null;
         });
     }
 
@@ -318,7 +373,7 @@ public class EnderDragonFight implements Listener {
      * @param player the player.
      * @return true if the player is within range.
      */
-    public boolean inRange(Player player) {
+    boolean inRange(Player player) {
         return player != null && player.isOnline()
                               && player.getWorld() == _world
                               && player.getLocation().distanceSquared(_center) < 180*180*180;
@@ -361,7 +416,7 @@ public class EnderDragonFight implements Listener {
     /**
      * Sets the current stage.
      */
-    public void setStage(FightStage stage) {
+    void setStage(FightStage stage) {
         if (_stage != stage) {
             _stage = stage;
             if (stage != FightStage.FINISHED) {
@@ -501,7 +556,12 @@ public class EnderDragonFight implements Listener {
                 if (getsLoot.getInventory().addItem(loot).size() == 0) {
                     NerdyDragon.message(getsLoot, "Check your inventory for your loot! (" + loot.getAmount() + "x " + loot.getType().toString() + ")");
                 } else {
-                    NerdyDragon.message(getsLoot, "There's no room in your inventory for your loot so it's been dropped at your feet. " + Util.locationToOrderedTriple(getsLoot.getLocation()) + " (" + loot.getAmount() + "x " + loot.getType().toString() + ")");
+                    String msg = String.format("There's no room in your inventory for your loot so it's been dropped at your feet. %s (%dx %s)",
+                        Util.locationToOrderedTriple(getsLoot.getLocation()),
+                        loot.getAmount(),
+                        loot.getType().toString()
+                    );
+                    NerdyDragon.message(getsLoot, msg);
                     _world.dropItemNaturally(getsLoot.getLocation(), loot);
                 }
             }
@@ -520,11 +580,11 @@ public class EnderDragonFight implements Listener {
         long absoluteDuration = System.currentTimeMillis() - _timeStarted;
         String fightDuration = DurationFormatUtils.formatDuration(absoluteDuration, Util.getHMSFormat(absoluteDuration));
         String adjective = (getAttackers().size() == 1) ? "warrior" : "warriors";
-        String attackers = _attackedBy.keySet()
-                                      .stream()
-                                      .map(Bukkit::getOfflinePlayer)
-                                      .map(p -> ChatColor.DARK_PURPLE + p.getName() + ChatColor.GRAY + " (" + DragonHelper.getDamageRatio(_attackedBy.get(p.getUniqueId()), _dragon) + "%)")
-                                      .collect(Collectors.joining(", "));
+        String attackers = _attackedBy.keySet().stream()
+            .map(Bukkit::getOfflinePlayer)
+            .map(p -> String.format("%s%s%s (%.2f%%)", ChatColor.DARK_PURPLE, p.getName(), ChatColor.GRAY,
+                DragonHelper.getDamageRatio(_attackedBy.get(p.getUniqueId()), _dragon)))
+            .collect(Collectors.joining(", "));
         for (Player player : Bukkit.getOnlinePlayers()) {
             NerdyDragon.message(player, "The dragon has been slain! The valiant " + adjective + " " + attackers + ChatColor.GRAY + " prevailed in " + ChatColor.DARK_PURPLE + fightDuration);
         }

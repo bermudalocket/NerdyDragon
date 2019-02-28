@@ -20,6 +20,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -29,22 +30,31 @@ import org.bukkit.plugin.java.JavaPlugin;
  */
 public class NerdyDragon extends JavaPlugin implements Listener {
 
-    // ------------------------------------------------------------------------
     /**
      * This plugin.
      */
     public static NerdyDragon PLUGIN;
 
+    /**
+     * This plugin's configuration.
+     */
     public static Configuration CONFIG;
 
+    /**
+     * Manages the leaderboard: the getting and saving of fight history and
+     * statistics.
+     */
     public static Leaderboard LEADERBOARD;
 
-    // ------------------------------------------------------------------------
     /**
-     * The current fight, or null if one does not exist. Note that the current
-     * fight might have been completed since the last restart.
+     * The current fight or null if one does not exist.
+     *
+     * It doesn't really make much sense to NOT make this a global variable
+     * since it's not the intention of this plugin to facilitate multiple
+     * dragon fight instances. The NMS code also only allows for one instance
+     * as well.
      */
-    private EnderDragonFight _currentFight;
+    public static EnderDragonFight FIGHT;
 
     // ------------------------------------------------------------------------
     /**
@@ -52,11 +62,7 @@ public class NerdyDragon extends JavaPlugin implements Listener {
      */
     public void onEnable() {
         PLUGIN = this;
-
-        saveDefaultConfig();
         CONFIG = new Configuration();
-        CONFIG.reload();
-
         LEADERBOARD = new Leaderboard();
 
         getServer().getPluginManager().registerEvents(this, this);
@@ -76,7 +82,7 @@ public class NerdyDragon extends JavaPlugin implements Listener {
     private void checkForExistingFight() {
         ConfigurationSection savedFight = getConfig().getConfigurationSection("saved-fight");
         if (savedFight != null) {
-            Thread.newThread(5, () -> _currentFight = new EnderDragonFight(savedFight));
+            Thread.newThread(5, () -> FIGHT = new EnderDragonFight(savedFight));
         }
     }
 
@@ -86,30 +92,12 @@ public class NerdyDragon extends JavaPlugin implements Listener {
      */
     public void onDisable() {
         ConfigurationSection serialize = Configuration.getOrCreateSection("saved-fight");
-        if (_currentFight != null && _currentFight.getStage() != FightStage.FINISHED) {
-            _currentFight.save(serialize);
+        if (FIGHT != null && FIGHT.getStage() != FightStage.FINISHED) {
+            FIGHT.save(serialize);
         } else {
             getConfig().set("saved-fight", null);
             saveConfig();
         }
-    }
-
-    // ------------------------------------------------------------------------
-    /**
-     * Returns the current fight, or null if one does not exist.
-     *
-     * @return the current fight, or null if one does not exist.
-     */
-    public EnderDragonFight getCurrentFight() {
-        return _currentFight;
-    }
-
-    // ------------------------------------------------------------------------
-    /**
-     * Clears the current fight, freeing it from memory.
-     */
-    void clearCurrentFight() {
-        _currentFight = null;
     }
 
     // ------------------------------------------------------------------------
@@ -134,11 +122,29 @@ public class NerdyDragon extends JavaPlugin implements Listener {
             return;
         }
         if (e.getEntityType() == EntityType.ENDER_DRAGON) {
-            if (_currentFight != null && _currentFight.getStage() != FightStage.FINISHED) {
-                _currentFight.updateDragon((EnderDragon) e.getEntity());
+            log("[DRAGON SPAWN] Caught EnderDragon spawn at " + Util.locationToOrderedTriple(e.getLocation()));
+            if (FIGHT != null && FIGHT.getStage() != FightStage.FINISHED) {
+                log("[DRAGON SPAWN] Fight in progress. Attempting to update the dragon without crashing and burning...");
+                FIGHT.updateDragon((EnderDragon) e.getEntity());
+                log("[DRAGON SPAWN] ... hopefully that worked.");
                 return;
             }
-            Thread.newThread(() -> _currentFight = new EnderDragonFight((EnderDragon) e.getEntity()));
+            Thread.newThread(() -> FIGHT = new EnderDragonFight((EnderDragon) e.getEntity()));
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Catch and log all dragon deaths.
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEntityDeath(EntityDeathEvent e) {
+        if (!NerdyDragon.CONFIG.ENABLED || e.getEntity().getWorld() != Util.WORLD_THE_END) {
+            return;
+        }
+        if (e.getEntityType() == EntityType.ENDER_DRAGON) {
+            log("[DRAGON DEATH] Dragon has UUID " + e.getEntity().getUniqueId().toString() +
+                ", killer " + e.getEntity().getKiller());
         }
     }
 
@@ -165,13 +171,12 @@ public class NerdyDragon extends JavaPlugin implements Listener {
         if (e.getEntityType() != EntityType.ENDER_DRAGON) {
             return;
         }
-        log("Dragon is attempting to unload (" + e.getEntity().getUniqueId().toString() + ")");
         if (((EnderDragon) e.getEntity()).getHealth() > 0) {
+            log("Dragon is attempting to unload (" + e.getEntity().getUniqueId().toString() + ")");
             final Location location = e.getEntity().getLocation().clone();
             Thread.newThread(() -> {
                 if (!location.isChunkLoaded()) {
-                    log("Reloading chunk...");
-                    location.getChunk().load();
+                    location.getChunk().setForceLoaded(true);
                 }
             });
         }
@@ -212,7 +217,6 @@ public class NerdyDragon extends JavaPlugin implements Listener {
         log("Sent " + sender.getName() + " a message: " + message);
     }
 
-    // ------------------------------------------------------------------------
     /**
      * A pre-formatted log prefix for this plugin.
      */

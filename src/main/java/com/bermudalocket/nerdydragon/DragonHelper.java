@@ -19,6 +19,19 @@ import java.util.UUID;
  */
 public class DragonHelper {
 
+    // ------------------------------------------------------------------------
+    /**
+     * Sometimes the dragon disappears during the middle of a fight because
+     * Mojang likes to keep things fun and interesting like that. This method
+     * aims to make the transition as seamless as possible by merging certain
+     * information from our old dragon's instance (which we're holding) into
+     * the new dragon. This currently copies health, attributes, location,
+     * and phase.
+     *
+     * @param newDragon the new dragon.
+     * @param oldDragon the missing/old dragon (should really be passed as
+     *                  EnderDragonFight#getDragon).
+     */
     static void mergeDragons(EnderDragon newDragon, EnderDragon oldDragon) {
         for (Attribute attribute : Attribute.values()) {
             try {
@@ -27,6 +40,8 @@ public class DragonHelper {
             } catch (Exception unsupportedAttribute) { }
         }
         newDragon.setHealth(oldDragon.getHealth());
+        newDragon.teleport(oldDragon.getLocation());
+        newDragon.setPhase(oldDragon.getPhase());
     }
 
     // ------------------------------------------------------------------------

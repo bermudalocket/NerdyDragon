@@ -22,7 +22,7 @@ public class FightCommand extends ExecutorBase {
             return false;
         }
 
-        EnderDragonFight fight = NerdyDragon.PLUGIN.getCurrentFight();
+        EnderDragonFight fight = NerdyDragon.FIGHT;
         if (fight == null) {
             sender.sendMessage(ChatColor.RED + "A fight does not currently exist.");
             return true;

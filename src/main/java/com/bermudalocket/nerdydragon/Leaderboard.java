@@ -185,8 +185,8 @@ public class Leaderboard {
         long mean = fights.stream()
             .mapToLong(fightId -> getDuration(fightId, yaml))
             .sum() / fights.size();
-        long squaredDev = fights.stream()
-            .mapToLong(fightId -> (getDuration(fightId, yaml) - mean)^2)
+        double squaredDev = fights.stream()
+            .mapToDouble(fightId -> Math.pow(getDuration(fightId, yaml) - mean, 2))
             .sum() / fights.size();
         long stDev = Math.round(Math.sqrt(squaredDev)); // won't be called often
 
