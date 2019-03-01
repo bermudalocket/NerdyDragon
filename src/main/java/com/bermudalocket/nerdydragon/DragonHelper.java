@@ -182,12 +182,4 @@ public class DragonHelper {
 
     private static final HashMap<UUID, Integer> _findTargetAttempts = new HashMap<>();
 
-    static double getDamageRatio(double damage, EnderDragon dragon) {
-        if (damage == 0) {
-            return 0;
-        }
-        double ratio = 100 * (damage / getMaxHealth(dragon));
-        return ratio >= 100 ? 100 : Math.round(ratio*100.0)/100.0;
-    }
-
 }

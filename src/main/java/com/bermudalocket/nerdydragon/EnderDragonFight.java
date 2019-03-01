@@ -7,14 +7,12 @@ import com.bermudalocket.nerdydragon.tasks.ReinforcementSpawnTask;
 import com.destroystokyo.paper.event.entity.EnderDragonFireballHitEvent;
 import com.destroystokyo.paper.event.entity.EnderDragonFlameEvent;
 import com.destroystokyo.paper.event.entity.EnderDragonShootFireballEvent;
-import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang.time.DurationFormatUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
@@ -277,32 +275,6 @@ public class EnderDragonFight implements Listener {
      */
     public CrystalRunnable getCrystalRunnable() {
         return _crystalRunnable;
-    }
-
-    // ------------------------------------------------------------------------
-    /**
-     * Returns an immutable set of players who have damaged the dragon during
-     * this fight.
-     *
-     * @return an immutable set of players who have damaged the dragon during
-     *         this fight.
-     */
-    ImmutableSet<OfflinePlayer> getAttackers() {
-        return ImmutableSet.copyOf(_attackedBy.keySet()
-            .stream()
-            .map(Bukkit::getOfflinePlayer)
-            .collect(Collectors.toSet()));
-    }
-
-    // ------------------------------------------------------------------------
-    /**
-     * Returns the damage done by the given player during this fight.
-     *
-     * @param uuid the player's UUID.
-     * @return the damage done by the given player during this fight.
-     */
-    double getDamage(UUID uuid) {
-        return _attackedBy.get(uuid);
     }
 
     // ------------------------------------------------------------------------
@@ -576,21 +548,38 @@ public class EnderDragonFight implements Listener {
             world.playSound(new Location(world, 0, 65, 0), Sound.ENTITY_ENDER_DRAGON_DEATH, 2500, 0.9f);
         }
 
+        // compute and normalize damage ratios
+        final HashMap<UUID, Double> damagePercents = new HashMap<>();
+        for (UUID uuid : _attackedBy.keySet()) {
+            double damage = _attackedBy.get(uuid);
+            if (damage == 0) {
+                damagePercents.put(uuid, 0.0);
+                continue;
+            }
+            double ratio = damage / DragonHelper.getMaxHealth(_dragon);
+            damagePercents.put(uuid, ratio);
+        }
+        double sum = damagePercents.values().stream().reduce(Double::sum).orElse(100.0);
+        for (UUID uuid : damagePercents.keySet()) {
+            double normalized = damagePercents.get(uuid) / sum;
+            normalized = Math.round(normalized * 100.0) / 100.0;
+            damagePercents.put(uuid, normalized);
+        }
+
         // calculate duration and build victory message
         long absoluteDuration = System.currentTimeMillis() - _timeStarted;
         String fightDuration = DurationFormatUtils.formatDuration(absoluteDuration, Util.getHMSFormat(absoluteDuration));
-        String adjective = (getAttackers().size() == 1) ? "warrior" : "warriors";
+        String adjective = (_attackedBy.size() == 1) ? "warrior" : "warriors";
         String attackers = _attackedBy.keySet().stream()
             .map(Bukkit::getOfflinePlayer)
-            .map(p -> String.format("%s%s%s (%.2f%%)", ChatColor.DARK_PURPLE, p.getName(), ChatColor.GRAY,
-                DragonHelper.getDamageRatio(_attackedBy.get(p.getUniqueId()), _dragon)))
+            .map(p -> String.format("%s%s%s (%.2f%%)", ChatColor.DARK_PURPLE, p.getName(), ChatColor.GRAY, damagePercents.get(p.getUniqueId())))
             .collect(Collectors.joining(", "));
         for (Player player : Bukkit.getOnlinePlayers()) {
             NerdyDragon.message(player, "The dragon has been slain! The valiant " + adjective + " " + attackers + ChatColor.GRAY + " prevailed in " + ChatColor.DARK_PURPLE + fightDuration);
         }
 
         // record this fight into history
-        NerdyDragon.LEADERBOARD.add(this, absoluteDuration);
+        NerdyDragon.LEADERBOARD.add(this, absoluteDuration, damagePercents);
 
         // debug
         _attackedBy.forEach((uuid, dmg) -> {
@@ -894,21 +883,21 @@ public class EnderDragonFight implements Listener {
             if (_dragon.getHealth() - finalDamage < 0) {
                 finalDamage -= Math.abs(_dragon.getHealth() - finalDamage);
             }
-            finalDamage = Math.round(finalDamage * 100.0) / 100.0;
+            double displayFinalDamage = Math.round(finalDamage * 100.0) / 100.0;
             if (damager instanceof Player) {
                 _lastDamagedBy = damager.getUniqueId();
                 recordDamage((Player) damager, finalDamage);
-                alertPlayers(damager.getName() + " inflicted " + finalDamage + " damage");
+                alertPlayers(damager.getName() + " inflicted " + displayFinalDamage + " damage");
             } else if (damager instanceof Projectile) {
                 ProjectileSource shooter = ((Projectile) damager).getShooter();
                 if (shooter instanceof Player) {
                     Player playerShooter = (Player) shooter;
                     recordDamage(playerShooter, finalDamage);
                     _lastDamagedBy = playerShooter.getUniqueId();
-                    alertPlayers(playerShooter.getName() + "'s " + damager.getType().toString() + " inflicted " + finalDamage + " damage");
+                    alertPlayers(playerShooter.getName() + "'s " + damager.getType().toString() + " inflicted " + displayFinalDamage + " damage");
                 }
             } else {
-                alertPlayers(damager.getType().toString() + " inflicted " + finalDamage + " damage");
+                alertPlayers(damager.getType().toString() + " inflicted " + displayFinalDamage + " damage");
             }
 
             // if the dragon is dead or about to die, don't do any extra stuff

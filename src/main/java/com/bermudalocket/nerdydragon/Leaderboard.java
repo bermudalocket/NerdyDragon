@@ -1,6 +1,7 @@
 package com.bermudalocket.nerdydragon;
 
 import org.apache.commons.lang.time.DurationFormatUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
@@ -11,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -223,7 +225,15 @@ public class Leaderboard {
         return results;
     }
 
-    void add(EnderDragonFight fight, long duration) {
+    // ------------------------------------------------------------------------
+    /**
+     * Adds a fight to the fight history.
+     *
+     * @param fight the fight.
+     * @param duration the duration.
+     * @param playerDamage a map from player UUID to normalized damage percent.
+     */
+    void add(EnderDragonFight fight, long duration, HashMap<UUID, Double> playerDamage) {
         FileConfiguration yaml = YamlConfiguration.loadConfiguration(LEADERBOARD_FILE);
         ConfigurationSection section = yaml.getConfigurationSection("fight-history");
         if (section == null) {
@@ -233,9 +243,10 @@ public class Leaderboard {
         thisFight.set("time-started", fight._timeStarted);
         thisFight.set("duration", duration);
         ConfigurationSection players = thisFight.createSection("players");
-        for (OfflinePlayer offlinePlayer : fight.getAttackers()) {
-            UUID uuid = offlinePlayer.getUniqueId();
-            players.set(offlinePlayer.getName(), DragonHelper.getDamageRatio(fight.getDamage(uuid), fight.getDragon()));
+        for (UUID uuid : playerDamage.keySet()) {
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
+            String name = offlinePlayer.isOnline() ? Bukkit.getPlayer(uuid).getName() : offlinePlayer.getName();
+            players.set(name, playerDamage.get(uuid));
         }
         try {
             yaml.save(LEADERBOARD_FILE);
