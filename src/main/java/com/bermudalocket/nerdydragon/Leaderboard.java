@@ -9,6 +9,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.LinkedHashSet;
@@ -39,6 +40,11 @@ public class Leaderboard {
      * Date formatting object used for converting timestamps.
      */
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("E MMM d y hh:mm:ss a");
+
+    /**
+     * Round decimals to the nearest hundredth.
+     */
+    private static final DecimalFormat PERCENT_FORMAT = new DecimalFormat("#.##");
 
     // ------------------------------------------------------------------------
     /**
@@ -133,15 +139,17 @@ public class Leaderboard {
     // ------------------------------------------------------------------------
     /**
      * Returns the overall percentage of damage done to the dragon by the given
-     * player in the given fight.
+     * player in the given fight. Note this is returned as a String with the
+     * numeric value rounded to the nearest hundredth.
      *
      * @param fightId the fight UUID.
      * @param player the player's name.
      * @param yaml the YAML instance.
      * @return the overall percentage of damage done by the player.
      */
-    private double getPlayerDamagePercent(UUID fightId, String player, FileConfiguration yaml) {
-        return yaml.getDouble(getKey(fightId) + ".players." + player, 0);
+    private String getPlayerDamagePercent(UUID fightId, String player, FileConfiguration yaml) {
+        double damagePct = yaml.getDouble(getKey(fightId) + ".players." + player, 0);
+        return PERCENT_FORMAT.format(damagePct);
     }
 
     // ------------------------------------------------------------------------
