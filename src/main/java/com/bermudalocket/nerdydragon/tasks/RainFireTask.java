@@ -1,8 +1,8 @@
 package com.bermudalocket.nerdydragon.tasks;
 
 import com.bermudalocket.nerdydragon.EnderDragonFight;
-import com.bermudalocket.nerdydragon.MathUtil;
 import com.bermudalocket.nerdydragon.Thread;
+import com.bermudalocket.nerdydragon.Util;
 import com.bermudalocket.nerdydragon.util.OrderedPair;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -47,7 +47,7 @@ public class RainFireTask extends AbstractFightTask {
         Thread.newThread(6, () -> {
             _fight.playSound(Sound.ENTITY_WITHER_SPAWN, 0.7f);
             Thread.newRepeatedThread(25, 40, 5, () -> {
-                OrderedPair<Integer> coords = MathUtil.getRandomCoordinates(40);
+                OrderedPair<Integer> coords = Util.getRandomCoordinates(40);
                 int x = coords.getA();
                 int z = coords.getB();
                 Location loc = new Location(world, x, 150, z);

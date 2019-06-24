@@ -85,7 +85,7 @@ public class CrystalRunnable implements Runnable {
     CrystalRunnable(EnderDragonFight fight) {
         _fight = fight;
         initCrystals();
-        _mainDelay = 20 * MathUtil.random(9, 14);
+        _mainDelay = 20 * Util.random(9, 14);
         _task = Bukkit.getScheduler().runTaskTimer(NerdyDragon.PLUGIN, this, 1, 1);
     }
 
@@ -103,7 +103,7 @@ public class CrystalRunnable implements Runnable {
             _state = CrystalState.SEARCHING_FOR_MASTER;
             _target = null;
         }
-        _mainDelay = config.getInt("current-delay", 20 * MathUtil.random(9, 14));
+        _mainDelay = config.getInt("current-delay", 20 * Util.random(9, 14));
         _subDelay = config.getInt("action-delay", 0);
         _task = Bukkit.getScheduler().runTaskTimer(NerdyDragon.PLUGIN, this, 1, 1);
     }
@@ -206,7 +206,7 @@ public class CrystalRunnable implements Runnable {
         if (generationSpots.size() == 0) {
             return;
         }
-        Location regenLoc = MathUtil.getRandomObject(generationSpots);
+        Location regenLoc = Util.getRandomObject(generationSpots);
         EnderCrystal newCrystal = (EnderCrystal) _fight.spawnReinforcement(regenLoc, EntityType.ENDER_CRYSTAL);
         ENDER_CRYSTALS.add(newCrystal);
         _fight.playSound(Sound.ENTITY_WITHER_SPAWN, 0.2f);
@@ -279,7 +279,7 @@ public class CrystalRunnable implements Runnable {
      */
     private EnderCrystal getRandomCrystal(EnderCrystal avoidChoosing) {
         for (int i = 1; true; i++) {
-            EnderCrystal randomCrystal = MathUtil.getRandomObject(ENDER_CRYSTALS);
+            EnderCrystal randomCrystal = Util.getRandomObject(ENDER_CRYSTALS);
             if (randomCrystal != avoidChoosing || i == 5) {
                 return randomCrystal;
             }
@@ -343,25 +343,25 @@ public class CrystalRunnable implements Runnable {
                             crystal.setBeamTarget(crystal.getLocation().add(0,15,0));
                         }
                     }
-                    _mainDelay = 20 * MathUtil.random(30, 50);
+                    _mainDelay = 20 * Util.random(30, 50);
                     return;
 
                 // time ran out and the player(s) did not blow up a crystal
                 case FOCUS_ON_MASTER:
                     regenerateCrystal();
                     _state = CrystalState.SEARCHING_FOR_MASTER;
-                    _mainDelay = 20 * MathUtil.random(12, 18);
+                    _mainDelay = 20 * Util.random(12, 18);
                     return;
 
                 // crystals are done focusing on the player & are ready to deal damage
                 case ATTACK_PLAYER:
                     if (_target != null && _target.isOnline()) {
                         Util.WORLD_THE_END.playSound(_target.getLocation(), Sound.BLOCK_END_PORTAL_SPAWN, 6, 1.5f);
-                        _target.damage(MathUtil.gaussian(6.5, 1.39), _masterCrystal);
+                        _target.damage(Util.gaussian(6.5, 1.39), _masterCrystal);
                         _target.removePotionEffect(PotionEffectType.LEVITATION);
                     }
                     _state = CrystalState.SEARCHING_FOR_MASTER;
-                    _mainDelay = 20 * MathUtil.random(12, 18);
+                    _mainDelay = 20 * Util.random(12, 18);
                     _target = null;
                     return;
             }

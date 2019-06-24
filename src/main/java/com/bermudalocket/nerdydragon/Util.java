@@ -1,5 +1,6 @@
 package com.bermudalocket.nerdydragon;
 
+import com.bermudalocket.nerdydragon.util.OrderedPair;
 import nu.nerd.entitymeta.EntityMeta;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -13,9 +14,7 @@ import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.UUID;
+import java.util.*;
 
 // ------------------------------------------------------------------------
 /**
@@ -23,6 +22,10 @@ import java.util.UUID;
  * elsewhere.
  */
 public class Util {
+    /**
+     * A persistent Random object.
+     */
+    private static final Random RANDOM = new Random();
 
     // ------------------------------------------------------------------------
     /**
@@ -60,7 +63,7 @@ public class Util {
      * @return the head of a random admin.
      */
     public static ItemStack getRandomAdminHead() {
-        String randomAdmin = MathUtil.getRandomObject(ADMINS);
+        String randomAdmin = getRandomObject(ADMINS);
         return getPlayerHead(randomAdmin);
     }
 
@@ -158,16 +161,19 @@ public class Util {
         // i had... issues
     }
 
+    // ------------------------------------------------------------------------
     /**
      * A reference to The End, used as a default-world fallback.
      */
     public static final World WORLD_THE_END = Bukkit.getWorld("world_the_end");
 
+    // ------------------------------------------------------------------------
     /**
      * This plugin's EntityMeta metadata key.
      */
     private static final String METADATA_KEY = "dragon-fight";
 
+    // ------------------------------------------------------------------------
     /**
      * A set of admin names from which Vex heads are randomly chosen.
      */
@@ -181,5 +187,104 @@ public class Util {
         "e3501dfb-9513-47c8-9e55-965f88325ff7", // bermudalocket
         "8a2182fb-bc2f-440f-87d0-a889c7832e78" // totemo
     ));
+
+    // ------------------------------------------------------------------------
+    /**
+     * Returns true if a uniformly-distributed random double is less than or
+     * equal to the given probability; false otherwise.
+     *
+     * @param probability the probability in the range [0, 1].
+     * @return true if a uniformly-distributed random double is less than or
+     *         equal to the given probability; false otherwise.
+     * @throws IllegalArgumentException if probability is not in [0, 1].
+     */
+    public static boolean cdf(double probability) {
+        if (probability < 0 || probability > 1) {
+            throw new IllegalArgumentException();
+        }
+        return RANDOM.nextDouble() <= probability;
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Returns a random integer from the interval of integers [min, max].
+     *
+     * @param min the interval minimum.
+     * @param max the interval maximum.
+     * @return a random integer from the interval of integers [min, max].
+     */
+    public static int random(int min, int max) {
+        return min + RANDOM.nextInt(1 + max - min);
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Returns a random integer from the interval of integers [0, max].
+     *
+     * @param max the interval maximum.
+     * @return a random integer from the interval of integers [min, max].
+     */
+    public static int random(int max) {
+        return random(0, max);
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Returns a uniformly-distributed random double in [0, 1).
+     *
+     * @return a uniformly-distributed random double in [0, 1).
+     */
+    public static double nextDouble() {
+        return RANDOM.nextDouble();
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Returns a normally distributed random double with mean and standard
+     * deviation given.
+     *
+     * @param mean the mean.
+     * @param stdev the standard deviation.
+     * @return a normally distributed random double.
+     */
+    public static double gaussian(double mean, double stdev) {
+        return mean + stdev*RANDOM.nextGaussian();
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Returns a random object from the given collection.
+     *
+     * @param collection the collection.
+     * @return a random object from the given collection.
+     */
+    public static <T> T getRandomObject(Collection<T> collection) {
+        if (collection == null || collection.size() == 0) {
+            return null;
+        }
+        int N = collection.size();
+        int n = RANDOM.nextInt(N);
+        int i = 0;
+        for (T t : collection) {
+            if (i == n) {
+                return t;
+            }
+            i++;
+        }
+        return null;
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Returns an ordered pair of random coordinates within a square radius.
+     *
+     * @param radius the radius.
+     * @return a random coordinate.
+     */
+    public static OrderedPair<Integer> getRandomCoordinates(int radius) {
+        int a = random(2 * radius) - radius;
+        int b = random(2 * radius) - radius;
+        return new OrderedPair<>(a, b);
+    }
 
 }

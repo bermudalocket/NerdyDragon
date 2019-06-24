@@ -528,7 +528,7 @@ public class EnderDragonFight implements Listener {
 
         // nerf drops to prevent farming
         if (e.getEntityType() != EntityType.ENDER_DRAGON) {
-            if (MathUtil.cdf(0.60)) {
+            if (Util.cdf(0.60)) {
                 e.getDrops().clear();
             }
             return;
@@ -681,7 +681,7 @@ public class EnderDragonFight implements Listener {
         PotionEffectHelper.modifyDragonBreath(effectCloud, _stage);
         dragonBreath.setDuration(effectCloud.getDuration());
 
-        if (MathUtil.cdf(0.30)) {
+        if (Util.cdf(0.30)) {
             Thread.newRepeatedThread(1, _stage.MAX_ENDERMITES, 1, () -> {
                 this.spawnReinforcement(dragonBreath.getLocation(), EntityType.ENDERMITE);
             });
@@ -736,7 +736,7 @@ public class EnderDragonFight implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDragonPhaseChange(EnderDragonChangePhaseEvent e) {
         EnderDragon.Phase phase = e.getNewPhase();
-        double rand = MathUtil.nextDouble();
+        double rand = Util.nextDouble();
         switch (_stage) {
             case FIRST:
                 if (phase != EnderDragon.Phase.CHARGE_PLAYER && phase != EnderDragon.Phase.CIRCLING) {
@@ -879,10 +879,10 @@ public class EnderDragonFight implements Listener {
             // in stage 4, randomly absorb projectiles and/or rain fireballs
             if (_stage == FightStage.FOURTH) {
                 if (_dragon.getHealth() >= 10) {
-                    if (MathUtil.cdf(0.10)) {
+                    if (Util.cdf(0.10)) {
                         new RainFireTask(this);
                     }
-                    if (damager instanceof Projectile && MathUtil.cdf(0.33)) {
+                    if (damager instanceof Projectile && Util.cdf(0.33)) {
                         if (new AbsorbProjectileTask(this, e).isAbsorbed()) {
                             return;
                         }
@@ -917,7 +917,7 @@ public class EnderDragonFight implements Listener {
             }
 
             // if at portal, try to leave early
-            if (MathUtil.cdf(_stage.LEAVE_PORTAL_CHANCE)) {
+            if (Util.cdf(_stage.LEAVE_PORTAL_CHANCE)) {
                 new LeavePortalTask(this);
             }
 
@@ -925,7 +925,7 @@ public class EnderDragonFight implements Listener {
             PotionEffectHelper.applyRandomEffects(player, _stage);
 
             // try to spawn some reinforcements
-            if (MathUtil.cdf(_stage.REINFORCEMENT_CHANCE)) {
+            if (Util.cdf(_stage.REINFORCEMENT_CHANCE)) {
                 new ReinforcementSpawnTask(this);
             }
         }

@@ -56,9 +56,9 @@ class PotionEffectHelper {
         int effectsApplied = 0;
         int n = stage.MAX_EFFECTS;
         for (int i = 0; i < n; i++) {
-            if (MathUtil.nextDouble() <= stage.POTION_EFFECT_CHANCE) {
+            if (Util.nextDouble() <= stage.POTION_EFFECT_CHANCE) {
                 PotionEffectType effect = getRandomEffect();
-                int randTicks = 20 * (MathUtil.random(stage.MAX_EXTRA_POTION_DUR) + 3);
+                int randTicks = 20 * (Util.random(stage.MAX_EXTRA_POTION_DUR) + 3);
                 if (effect == PotionEffectType.UNLUCK) {
                     player.setFireTicks(randTicks);
                 } else {
@@ -84,7 +84,7 @@ class PotionEffectHelper {
      * @return a PotionEffect.
      */
     private static PotionEffect getPotionEffect(PotionEffectType type, FightStage stage) {
-        int duration = 20 * (3 + MathUtil.random(stage.MAX_EXTRA_POTION_DUR));
+        int duration = 20 * (3 + Util.random(stage.MAX_EXTRA_POTION_DUR));
         return new PotionEffect(type, duration, 1);
     }
 
@@ -95,7 +95,7 @@ class PotionEffectHelper {
      * @return a random negative potion effect type.
      */
     private static PotionEffectType getRandomEffect() {
-        return MathUtil.getRandomObject(NEGATIVE_EFFECTS);
+        return Util.getRandomObject(NEGATIVE_EFFECTS);
     }
 
     // ------------------------------------------------------------------------

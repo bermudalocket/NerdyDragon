@@ -155,7 +155,7 @@ public class DragonHelper {
      */
     static Player findRandomTarget(EnderDragonFight fight) {
         UUID searchUUID = UUID.randomUUID();
-        Player player = MathUtil.getRandomObject(fight.getNearbyPlayers());
+        Player player = Util.getRandomObject(fight.getNearbyPlayers());
         if (fight.inRange(player)) {
             return player;
         } else {
@@ -170,7 +170,7 @@ public class DragonHelper {
             _findTargetAttempts.remove(searchUUID);
             return null;
         }
-        Player player = MathUtil.getRandomObject(fight.getNearbyPlayers());
+        Player player = Util.getRandomObject(fight.getNearbyPlayers());
         if (fight.inRange(player)) {
             _findTargetAttempts.remove(searchUUID);
             return player;

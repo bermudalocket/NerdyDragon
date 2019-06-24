@@ -2,7 +2,7 @@ package com.bermudalocket.nerdydragon.tasks;
 
 import com.bermudalocket.nerdydragon.EnderDragonFight;
 import com.bermudalocket.nerdydragon.FightStage;
-import com.bermudalocket.nerdydragon.MathUtil;
+import com.bermudalocket.nerdydragon.Util;
 import com.bermudalocket.nerdydragon.util.OrderedPair;
 import org.bukkit.Location;
 import org.bukkit.Sound;
@@ -30,8 +30,8 @@ public class ReinforcementSpawnTask extends AbstractFightTask {
 
     @Override
     public void run() {
-        double rand = MathUtil.nextDouble();
-        int n = MathUtil.random(_stage.MAX_REINF_PER_CLUSTER);
+        double rand = Util.nextDouble();
+        int n = Util.random(_stage.MAX_REINF_PER_CLUSTER);
 
         if (rand <= 0.30) {
             _fight.playSound(Sound.ENTITY_EVOKER_PREPARE_SUMMON, 0.8f);
@@ -61,7 +61,7 @@ public class ReinforcementSpawnTask extends AbstractFightTask {
     }
 
     private void spawnAngryEnderman() {
-        Player target = MathUtil.getRandomObject(_fight.getNearbyPlayers());
+        Player target = Util.getRandomObject(_fight.getNearbyPlayers());
         Location loc = target.getLocation();
         Location spawnLoc = loc.toVector()
                                .add(new Vector(0, 10, 0))
@@ -71,9 +71,9 @@ public class ReinforcementSpawnTask extends AbstractFightTask {
     }
 
     private void spawnPhantomWithPassenger() {
-        int phantomSize = MathUtil.random(_stage.MIN_PHANTOM_SIZE, _stage.MAX_PHANTOM_SIZE);
-        EntityType passengerType = MathUtil.getRandomObject(DEFAULT_PASSENGERS);
-        Location loc = _fight.getCenter().clone().add(0, MathUtil.random(15, 60), 0);
+        int phantomSize = Util.random(_stage.MIN_PHANTOM_SIZE, _stage.MAX_PHANTOM_SIZE);
+        EntityType passengerType = Util.getRandomObject(DEFAULT_PASSENGERS);
+        Location loc = _fight.getCenter().clone().add(0, Util.random(15, 60), 0);
         Phantom phantom = (Phantom) _fight.spawnReinforcement(loc, EntityType.PHANTOM);
         phantom.setSize(phantomSize);
         Entity passenger = _fight.spawnReinforcement(phantom.getLocation(), passengerType);
@@ -83,7 +83,7 @@ public class ReinforcementSpawnTask extends AbstractFightTask {
 
     private void spawnShulker() {
         World world = getDragon().getWorld();
-        OrderedPair<Integer> coords = MathUtil.getRandomCoordinates(30);
+        OrderedPair<Integer> coords = Util.getRandomCoordinates(30);
         int x = coords.getA();
         int z = coords.getB();
         double y = world.getHighestBlockYAt(x, z) + 1;
@@ -93,7 +93,7 @@ public class ReinforcementSpawnTask extends AbstractFightTask {
 
     private void spawnEvokerRidingBat() {
         World world = getDragon().getWorld();
-        OrderedPair<Integer> coords = MathUtil.getRandomCoordinates(30);
+        OrderedPair<Integer> coords = Util.getRandomCoordinates(30);
         int x = coords.getA();
         int z = coords.getB();
         double y = world.getHighestBlockYAt(x, z) + 12;

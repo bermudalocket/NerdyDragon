@@ -34,7 +34,7 @@ public class Thread {
      * @param runnable the runnable.
      */
     public static void newThread(int minDelay, int maxDelay, Runnable runnable) {
-        newThread(MathUtil.random(minDelay, maxDelay), runnable);
+        newThread(Util.random(minDelay, maxDelay), runnable);
     }
 
     // ------------------------------------------------------------------------
@@ -51,7 +51,7 @@ public class Thread {
         if (minRepeats <= 0 || minRepeats > maxRepeats || delayStep <= 0) {
             throw new IllegalArgumentException();
         }
-        newRepeatedThread(MathUtil.random(minRepeats, maxRepeats), delayStep, runnable);
+        newRepeatedThread(Util.random(minRepeats, maxRepeats), delayStep, runnable);
     }
 
     // ------------------------------------------------------------------------
