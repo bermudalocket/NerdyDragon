@@ -50,8 +50,8 @@ public class Leaderboard {
     /**
      * Constructor.
      */
-    Leaderboard() {
-        LEADERBOARD_FILE = new File(NerdyDragon.PLUGIN.getDataFolder().getPath() + "/leaderboard.yml");
+    public Leaderboard(String dataPath) {
+        LEADERBOARD_FILE = new File(dataPath + "/leaderboard.yml");
     }
 
     // ------------------------------------------------------------------------
@@ -68,9 +68,6 @@ public class Leaderboard {
     /**
      * Returns the YAML parent key for the given fight UUID, of the form
      * "fight-history.[UUID]".
-     *
-     * @param fightId
-     * @return
      */
     private static String getKey(UUID fightId) {
         return "fight-history." + fightId.toString();

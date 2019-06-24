@@ -63,7 +63,7 @@ public class NerdyDragon extends JavaPlugin implements Listener {
     public void onEnable() {
         PLUGIN = this;
         CONFIG = new Configuration();
-        LEADERBOARD = new Leaderboard();
+        LEADERBOARD = new Leaderboard(getDataFolder().getPath());
 
         getServer().getPluginManager().registerEvents(this, this);
 
