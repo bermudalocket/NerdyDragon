@@ -1,6 +1,6 @@
 package com.bermudalocket.nerdydragon.tasks;
 
-import com.bermudalocket.nerdydragon.DragonHelper;
+import com.bermudalocket.nerdydragon.DragonController;
 import com.bermudalocket.nerdydragon.EnderDragonFight;
 import com.bermudalocket.nerdydragon.Util;
 import org.bukkit.Color;
@@ -38,7 +38,7 @@ public class AbsorbProjectileTask extends AbstractFightTask {
             return;
         }
         _absorbed = true;
-        DragonHelper.healDragon(dragon, _event.getFinalDamage());
+        DragonController.healDragon(dragon, _event.getFinalDamage());
         AreaEffectCloud cloud = (AreaEffectCloud) Util.WORLD_THE_END.spawnEntity(dragon.getLocation(), EntityType.AREA_EFFECT_CLOUD);
         cloud.setParticle(Particle.REDSTONE, new Particle.DustOptions(Color.LIME, 1));
         cloud.setDuration(10);

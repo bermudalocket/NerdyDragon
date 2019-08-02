@@ -1,6 +1,7 @@
 package com.bermudalocket.nerdydragon.tasks;
 
 import com.bermudalocket.nerdydragon.EnderDragonFight;
+import com.bermudalocket.nerdydragon.NerdyDragon;
 import com.bermudalocket.nerdydragon.Thread;
 import com.bermudalocket.nerdydragon.Util;
 import com.bermudalocket.nerdydragon.util.OrderedPair;
@@ -40,12 +41,12 @@ public class RainFireTask extends AbstractFightTask {
         Thread.newRepeatedThread(4, 20, () -> {
             for (Player player : _fight.getNearbyPlayers()) {
                 player.sendTitle(ChatColor.RED + "INCOMING ATTACK", "", 1, 8, 1);
-                _fight.playSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1);
+                NerdyDragon.playSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1);
             }
         });
 
         Thread.newThread(6, () -> {
-            _fight.playSound(Sound.ENTITY_WITHER_SPAWN, 0.7f);
+            NerdyDragon.playSound(Sound.ENTITY_WITHER_SPAWN, 0.7f);
             Thread.newRepeatedThread(25, 40, 5, () -> {
                 OrderedPair<Integer> coords = Util.getRandomCoordinates(40);
                 int x = coords.getA();

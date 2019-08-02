@@ -2,7 +2,6 @@ package com.bermudalocket.nerdydragon;
 
 import org.bukkit.Particle;
 import org.bukkit.entity.AreaEffectCloud;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -11,19 +10,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 
 class PotionEffectHelper {
-
-    // ------------------------------------------------------------------------
-    /**
-     * Removes all potion effects from the given entity.
-     *
-     * @param entity the entity.
-     */
-    public static void removePotionEffects(LivingEntity entity) {
-        entity.getActivePotionEffects()
-            .stream()
-            .map(PotionEffect::getType)
-            .forEach(entity::removePotionEffect);
-    }
 
     // ------------------------------------------------------------------------
     /**

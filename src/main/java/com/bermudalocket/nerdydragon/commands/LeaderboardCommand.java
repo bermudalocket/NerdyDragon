@@ -1,14 +1,11 @@
 package com.bermudalocket.nerdydragon.commands;
 
+import com.bermudalocket.nerdydragon.Leaderboard;
 import com.bermudalocket.nerdydragon.NerdyDragon;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class LeaderboardCommand extends ExecutorBase {
 
@@ -24,24 +21,21 @@ public class LeaderboardCommand extends ExecutorBase {
 
         if ((args.length == 1 || args.length == 2) && args[0].equalsIgnoreCase("statistics")) {
             if (args.length == 1) {
-                msg(sender, NerdyDragon.LEADERBOARD.getStatistics(null));
+                msg(sender, NerdyDragon.LEADERBOARD.getDurationStatistics(Leaderboard.Context.ALL));
                 return true;
             }
-            if (args[1].equalsIgnoreCase("solo")) {
-                msg(sender, NerdyDragon.LEADERBOARD.getStatistics(true));
-            } else if (args[1].equalsIgnoreCase("group")) {
-                msg(sender, NerdyDragon.LEADERBOARD.getStatistics(false));
-            } else {
-                msg(sender, NerdyDragon.LEADERBOARD.getStatistics(null));
+            Leaderboard.Context tryContext = Leaderboard.Context.fromString(args[1]);
+            if (tryContext != null) {
+                msg(sender, NerdyDragon.LEADERBOARD.getDurationStatistics(tryContext));
             }
             return true;
         }
-
+/*
         if ((args.length == 2 || args.length == 3) && args[0].equalsIgnoreCase("top")) {
             int n = 5;
             try {
-                n = Integer.valueOf(args[2]);
-            } catch (Exception e) { }
+                n = Integer.parseInt(args[2]);
+            } catch (Exception ignored) { }
             msg(sender, "--------------------------------------");
             if (args[1].equalsIgnoreCase("solo")) {
                 NerdyDragon.LEADERBOARD.getTop(n, true).forEach(s -> msg(sender, s));
@@ -51,7 +45,7 @@ public class LeaderboardCommand extends ExecutorBase {
                 NerdyDragon.LEADERBOARD.getTop(n, null).forEach(s -> msg(sender, s));
             }
             return true;
-        }
+        }*/
 
         return false;
     }

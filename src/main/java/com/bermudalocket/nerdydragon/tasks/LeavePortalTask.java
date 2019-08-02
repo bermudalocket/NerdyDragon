@@ -1,7 +1,6 @@
 package com.bermudalocket.nerdydragon.tasks;
 
 import com.bermudalocket.nerdydragon.EnderDragonFight;
-import com.bermudalocket.nerdydragon.MathUtil;
 import org.bukkit.entity.EnderDragon;
 
 import java.util.Arrays;

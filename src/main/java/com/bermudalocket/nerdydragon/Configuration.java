@@ -1,23 +1,13 @@
 package com.bermudalocket.nerdydragon;
 
-import com.google.common.collect.ImmutableSet;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EnderCrystal;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +19,10 @@ public class Configuration {
      * If this plugin's hook (CreatureSpawnEvent in main class) is active.
      */
     public boolean ENABLED;
+
+    public static boolean NERF_DROPS = true;
+
+    public static double DROP_NERF_RATE = 0.6;
 
     /**
      * The set of worlds in which the dragon death sound will be played.
@@ -60,6 +54,9 @@ public class Configuration {
 
         ENABLED = config.getBoolean("enabled", true);
 
+        NERF_DROPS = config.getBoolean("nerf-drops", true);
+        DROP_NERF_RATE = config.getDouble("nerf-rate", 0.6);
+
         MIRROR_DRAGON_DEATH_WORLDS = config.getStringList("mirror-dragon-death-sound")
                                            .stream()
                                            .map(Bukkit::getWorld)
@@ -69,9 +66,9 @@ public class Configuration {
 
         for (String locString : config.getStringList("ender-crystal-pillar-locations")) {
             String[] parts = locString.split(",");
-            int x = Integer.valueOf(parts[0]);
-            int y = Integer.valueOf(parts[1]);
-            int z = Integer.valueOf(parts[2]);
+            int x = Integer.parseInt(parts[0]);
+            int y = Integer.parseInt(parts[1]);
+            int z = Integer.parseInt(parts[2]);
             NerdyDragon.log("Loaded regeneration point: (" + x + ", " + y + ", " + z + ")");
             ENDER_CRYSTAL_PILLAR_LOCATIONS.add(new Location(Util.WORLD_THE_END, x, y, z));
         }
@@ -97,12 +94,12 @@ public class Configuration {
      *
      * @return the loot.
      */
-    ImmutableSet<ItemStack> getLoot() {
+    public ArrayList<ItemStack> getLoot() {
         ItemStack wings = new ItemStack(Material.ELYTRA, 1);
         ItemMeta meta = wings.getItemMeta();
         meta.setLore(Collections.singletonList(ChatColor.DARK_PURPLE + "I Survived The Dragon Fight!"));
         wings.setItemMeta(meta);
-        return ImmutableSet.of(wings, new ItemStack(Material.DRAGON_HEAD, 1));
+        return new ArrayList<>(Arrays.asList(wings, new ItemStack(Material.DRAGON_HEAD, 1)));
     }
 
     // ------------------------------------------------------------------------

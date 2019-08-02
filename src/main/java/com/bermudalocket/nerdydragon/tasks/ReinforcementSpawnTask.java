@@ -2,6 +2,7 @@ package com.bermudalocket.nerdydragon.tasks;
 
 import com.bermudalocket.nerdydragon.EnderDragonFight;
 import com.bermudalocket.nerdydragon.FightStage;
+import com.bermudalocket.nerdydragon.NerdyDragon;
 import com.bermudalocket.nerdydragon.Util;
 import com.bermudalocket.nerdydragon.util.OrderedPair;
 import org.bukkit.Location;
@@ -21,39 +22,39 @@ import java.util.HashSet;
 
 public class ReinforcementSpawnTask extends AbstractFightTask {
 
-    private final FightStage _stage;
+    private final FightStage this.stage;
 
     public ReinforcementSpawnTask(EnderDragonFight fight) {
         super(fight, true);
-        _stage = fight.getStage();
+        this.stage = fight.getStage();
     }
 
     @Override
     public void run() {
         double rand = Util.nextDouble();
-        int n = Util.random(_stage.MAX_REINF_PER_CLUSTER);
+        int n = Util.random(this.stage.MAX_REINF_PER_CLUSTER);
 
         if (rand <= 0.30) {
-            _fight.playSound(Sound.ENTITY_EVOKER_PREPARE_SUMMON, 0.8f);
+            NerdyDragon.playSound(Sound.ENTITY_EVOKER_PREPARE_SUMMON, 0.8f);
             for (int i = 1; i <= n; i++) {
                 spawnPhantomWithPassenger();
             }
         } else if (rand <= 0.50) {
-            _fight.playSound(Sound.ENTITY_ENDERMAN_STARE, 1.5f);
+            NerdyDragon.playSound(Sound.ENTITY_ENDERMAN_STARE, 1.5f);
             spawnAngryEnderman();
         } else if (rand <= 0.75) {
-            if (_stage == FightStage.SECOND) {
+            if (this.stage == FightStage.SECOND) {
                 return;
             }
-            _fight.playSound(Sound.ENTITY_ILLUSIONER_CAST_SPELL, 0.7f);
+            NerdyDragon.playSound(Sound.ENTITY_ILLUSIONER_CAST_SPELL, 0.7f);
             for (int i = 1; i <= n; i++) {
                 spawnShulker();
             }
         } else {
-            if (_stage == FightStage.SECOND || _stage == FightStage.THIRD) {
+            if (this.stage == FightStage.SECOND || this.stage == FightStage.THIRD) {
                 return;
             }
-            _fight.playSound(Sound.ENTITY_EVOKER_PREPARE_WOLOLO, 0.6f);
+            NerdyDragon.playSound(Sound.ENTITY_EVOKER_PREPARE_WOLOLO, 0.6f);
             for (int i = 1; i <= 3; i++) {
                 spawnEvokerRidingBat();
             }
@@ -71,7 +72,7 @@ public class ReinforcementSpawnTask extends AbstractFightTask {
     }
 
     private void spawnPhantomWithPassenger() {
-        int phantomSize = Util.random(_stage.MIN_PHANTOM_SIZE, _stage.MAX_PHANTOM_SIZE);
+        int phantomSize = Util.random(this.stage.MIN_PHANTOM_SIZE, this.stage.MAX_PHANTOM_SIZE);
         EntityType passengerType = Util.getRandomObject(DEFAULT_PASSENGERS);
         Location loc = _fight.getCenter().clone().add(0, Util.random(15, 60), 0);
         Phantom phantom = (Phantom) _fight.spawnReinforcement(loc, EntityType.PHANTOM);

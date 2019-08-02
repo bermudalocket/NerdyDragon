@@ -6,12 +6,13 @@
     <groupId>com.bermudalocket</groupId>
     <name>NerdyDragon</name>
     <artifactId>NerdyDragon</artifactId>
-    <version>2.1.0</version>
+    <version>3.0.0</version>
     <packaging>jar</packaging>
-    <description>Assigns and manages a custom Ender Dragon loot table.</description>
+    <description>A custom Ender Dragon battle.</description>
     <url>https://github.com/bermudalocket/${project.name}</url>
 
     <build>
+        <directory>/System/Volumes/Data/Users/mikerippe/server/plugins</directory>
         <defaultGoal>clean package</defaultGoal>
         <plugins>
             <plugin>
@@ -41,13 +42,13 @@
         <dependency>
             <groupId>com.destroystokyo.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.13.2-R0.1-SNAPSHOT</version>
+            <version>1.14.4-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>craftbukkit</artifactId>
-            <version>1.13.2-R0.1-SNAPSHOT</version>
+            <version>1.14.3-R0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.NerdNu</groupId>

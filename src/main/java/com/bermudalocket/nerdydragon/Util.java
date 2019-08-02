@@ -22,6 +22,7 @@ import java.util.*;
  * elsewhere.
  */
 public class Util {
+
     /**
      * A persistent Random object.
      */
@@ -198,7 +199,7 @@ public class Util {
      *         equal to the given probability; false otherwise.
      * @throws IllegalArgumentException if probability is not in [0, 1].
      */
-    public static boolean cdf(double probability) {
+    public static boolean tryWithChance(double probability) {
         if (probability < 0 || probability > 1) {
             throw new IllegalArgumentException();
         }

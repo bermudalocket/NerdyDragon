@@ -1,23 +1,71 @@
 package com.bermudalocket.nerdydragon;
 
-import net.minecraft.server.v1_13_R2.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftEnderDragon;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftEnderDragon;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
+import org.bukkit.entity.AreaEffectCloud;
+import org.bukkit.entity.DragonFireball;
 import org.bukkit.entity.EnderDragon;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityTargetEvent;
+import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Consumer;
 
-// ------------------------------------------------------------------------
-/**
- * A class to help query and control EnderDragon behavior.
- */
-public class DragonHelper {
+public class DragonController implements DragonControllerListener {
+
+    public DragonController() { }
+
+    public Consumer<EnderDragonFight> onDragonFireball(DragonActionContext context) {
+        final Entity target = context.getTarget();
+        if (target == null) return null;
+
+        // TODO test if all this fuckery is still necessary or if they fixed their velocity physics
+        final EnderDragon dragon = context.getDragon();
+        return fight -> Thread.newRepeatedThread(1, fight.getStage().MAX_EXTRA_FIREBALLS, fight.getStage().FIREBALL_TICK_INCREMENT, () -> {
+            Location targetLoc = target.getLocation();
+            Location dragonLoc = dragon.getEyeLocation();
+
+            // gotta spawn the fireball ahead of the dragon otherwise it'll just crash right into it
+            // like a fucking twit
+            Vector farEnoughAhead = dragonLoc.toVector()
+                                             .add(dragonLoc.getDirection()
+                                                           .multiply(4));
+            Vector dP = targetLoc.toVector()
+                                 .subtract(farEnoughAhead)
+                                 .normalize()
+                                 .multiply(0.75);
+            DragonFireball fireball = dragon.launchProjectile(DragonFireball.class, dP);
+            fireball.setDirection(dP);
+        });
+    }
+
+    public Consumer<EnderDragonFight> onFireballImpact(DragonActionContext context) {
+        if (context.getTarget() == null) {
+            return null;
+        }
+        AreaEffectCloud dragonBreath = (AreaEffectCloud) context.getTarget();
+        Util.tagEntityWithMetadata(dragonBreath);
+        PotionEffectHelper.modifyDragonBreath(dragonBreath, context.getStage());
+
+        return fight -> {
+            if (Util.tryWithChance(0.30)) {
+                Thread.newRepeatedThread(1, fight.getStage().MAX_ENDERMITES, 1, () -> {
+                    fight.spawnReinforcement(dragonBreath.getLocation(), EntityType.ENDERMITE);
+                });
+            }
+        };
+    }
+
+    // TODO below -------------------------------------------------------------
 
     // ------------------------------------------------------------------------
     /**
@@ -187,7 +235,7 @@ public class DragonHelper {
             return 0;
         }
         double ratio = 100 * (damage / getMaxHealth(dragon));
-        return ratio >= 100 ? 100 : Math.round(ratio*100.0)/100.0;
+        return ratio >= 100 ? 100 : ratio;
     }
 
 }

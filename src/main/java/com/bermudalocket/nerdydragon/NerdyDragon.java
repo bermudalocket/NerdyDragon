@@ -9,6 +9,7 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.ConfigurationSection;
@@ -22,7 +23,11 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.ArrayList;
+import java.util.HashSet;
 
 // ------------------------------------------------------------------------
 /**
@@ -30,31 +35,46 @@ import org.bukkit.plugin.java.JavaPlugin;
  */
 public class NerdyDragon extends JavaPlugin implements Listener {
 
-    /**
-     * This plugin.
-     */
     public static NerdyDragon PLUGIN;
 
-    /**
-     * This plugin's configuration.
-     */
     public static Configuration CONFIG;
 
-    /**
-     * Manages the leaderboard: the getting and saving of fight history and
-     * statistics.
-     */
     public static Leaderboard LEADERBOARD;
 
-    /**
-     * The current fight or null if one does not exist.
-     *
-     * It doesn't really make much sense to NOT make this a global variable
-     * since it's not the intention of this plugin to facilitate multiple
-     * dragon fight instances. The NMS code also only allows for one instance
-     * as well.
-     */
     public static EnderDragonFight FIGHT;
+
+    private static final HashSet<PlayerState> PLAYER_STATES = new HashSet<>();
+
+    // TODO API access point --------------------------------------------------
+    static final HashSet<DragonControllerListener> LISTENERS = new HashSet<>();
+    public static void registerListener(DragonControllerListener listener) {
+        LISTENERS.add(listener);
+    }
+    // TODO -------------------------------------------------------------------
+
+    // ------------------------------------------------------------------------
+    /**
+     * Plays a sound at each player's location.
+     *
+     * @param sound the sound.
+     * @param pitch the pitch.
+     */
+    public static void playSound(EnderDragonFight fight, Sound sound, float pitch) {
+        for (Player player : fight.getNearbyPlayers()) {
+            player.playSound(player.getLocation(), sound, 3, pitch);
+        }
+    }
+
+    public PlayerState getPlayerState(Player player) {
+        for (PlayerState playerState : PLAYER_STATES) {
+            if (playerState.matches(player)) {
+                return playerState;
+            }
+        }
+        PlayerState playerState = new PlayerState(player);
+        PLAYER_STATES.add(playerState);
+        return playerState;
+    }
 
     // ------------------------------------------------------------------------
     /**
@@ -98,6 +118,30 @@ public class NerdyDragon extends JavaPlugin implements Listener {
             getConfig().set("saved-fight", null);
             saveConfig();
         }
+    }
+
+    public void awardLoot(Player player) {
+        ArrayList<ItemStack> missedLoot = new ArrayList<>();
+        for (ItemStack loot : CONFIG.getLoot()) {
+            if (player.getInventory().addItem(loot).size() > 0) {
+                missedLoot.add(loot);
+            }
+        }
+        message(player, "Check your inventory for your loot!");
+        if (missedLoot.size() > 0) {
+            String msg = String.format(
+                "There's no room in your inventory for %s of your loot, so it's been dropped at your feet %s.",
+                CONFIG.getLoot().size() == missedLoot.size() ? "all" : "some", Util.locationToOrderedTriple(player.getLocation())
+            );
+            NerdyDragon.message(player, msg);
+            for (ItemStack loot : missedLoot) {
+                player.getWorld().dropItemNaturally(player.getLocation(), loot);
+            }
+        }
+    }
+
+    public boolean isValidLootRecipient(Player player) {
+        return player != null && player.isOnline() && !player.isDead();
     }
 
     // ------------------------------------------------------------------------
