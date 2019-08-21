@@ -5,9 +5,8 @@ import com.bermudalocket.nerdydragon.commands.FightCommand;
 import com.bermudalocket.nerdydragon.commands.LeaderboardCommand;
 import com.bermudalocket.nerdydragon.commands.PluginStateCommand;
 import com.bermudalocket.nerdydragon.commands.ReloadCommand;
-import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
+import com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
@@ -164,21 +163,13 @@ public class NerdyDragon extends JavaPlugin implements Listener {
 
     // ------------------------------------------------------------------------
     /**
-     * Prevents the dragon from being unloaded, which seems to cause silliness.
+     * Prevents the dragon from clipping into and entering an End Gateway.
      */
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onDragonUnload(EntityRemoveFromWorldEvent e) {
-        if (e.getEntityType() != EntityType.ENDER_DRAGON) {
-            return;
-        }
-        if (((EnderDragon) e.getEntity()).getHealth() > 0) {
-            log("Dragon is attempting to unload (" + e.getEntity().getUniqueId().toString() + ")");
-            final Location location = e.getEntity().getLocation().clone();
-            Thread.newThread(() -> {
-                if (!location.isChunkLoaded()) {
-                    location.getChunk().setForceLoaded(true);
-                }
-            });
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onDragonTeleport(EntityTeleportEndGatewayEvent e) {
+        if (e.getEntityType() == EntityType.ENDER_DRAGON) {
+            e.setCancelled(true);
+            log("Prevented dragon from teleporting through an End Gateway at " + Util.locationToOrderedTriple(e.getFrom()));
         }
     }
 
