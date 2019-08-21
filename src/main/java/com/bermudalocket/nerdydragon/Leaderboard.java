@@ -218,7 +218,7 @@ public class Leaderboard {
             long time = getTimeStarted(fightId, yaml);
             String playersString = getPlayers(fightId, yaml)
                 .stream()
-                .map(player -> ChatColor.DARK_PURPLE + player + ChatColor.GRAY + " (" + getPlayerDamagePercent(fightId, player, yaml) + "%)")
+                .map(player -> String.format("%s%s%s (%.2f%%)", ChatColor.DARK_PURPLE, player, ChatColor.GRAY, getPlayerDamagePercent(fightId,player,yaml)))
                 .collect(Collectors.joining(", "));
             results.add("#" + i + ". " + emph(DurationFormatUtils.formatDuration(duration, Util.getHMSFormat(duration))) + " by " + playersString + " on " + emph(longToDate(time)));
         }

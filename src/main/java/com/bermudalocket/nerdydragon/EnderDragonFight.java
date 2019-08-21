@@ -550,20 +550,14 @@ public class EnderDragonFight implements Listener {
 
         // compute and normalize damage ratios
         final HashMap<UUID, Double> damagePercents = new HashMap<>();
+        double damageSum = _attackedBy.values()
+                                      .stream()
+                                      .reduce(Double::sum)
+                                      .orElse(DragonHelper.getMaxHealth(_dragon));
         for (UUID uuid : _attackedBy.keySet()) {
             double damage = _attackedBy.get(uuid);
-            if (damage == 0) {
-                damagePercents.put(uuid, 0.0);
-                continue;
-            }
-            double ratio = damage / DragonHelper.getMaxHealth(_dragon);
+            double ratio = damage / damageSum; // normalize
             damagePercents.put(uuid, ratio);
-        }
-        double sum = damagePercents.values().stream().reduce(Double::sum).orElse(100.0);
-        for (UUID uuid : damagePercents.keySet()) {
-            double normalized = damagePercents.get(uuid) / sum;
-            normalized = Math.round(normalized * 100.0) / 100.0;
-            damagePercents.put(uuid, normalized);
         }
 
         // calculate duration and build victory message
