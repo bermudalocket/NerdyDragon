@@ -6,12 +6,12 @@
  */
 package com.bermudalocket.nerdydragon;
 
-import net.minecraft.server.v1_13_R2.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityLiving;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftEnderDragon;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftEnderDragon;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityTargetEvent;
