@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2019 bermudalocket. All rights reserved.
+ * Unauthorized copying or distribution of this item without permission of the author is prohibited.
+ * Proprietary and Confidential
+ * Written by bermudalocket, 2019.
+ */
 package com.bermudalocket.nerdydragon;
 
 import net.minecraft.server.v1_13_R2.EntityLiving;

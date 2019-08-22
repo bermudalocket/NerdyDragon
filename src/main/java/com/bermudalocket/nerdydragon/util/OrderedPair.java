@@ -1,6 +1,10 @@
+/*
+ * Copyright (c) 2019 bermudalocket. All rights reserved.
+ * Unauthorized copying or distribution of this item without permission of the author is prohibited.
+ * Proprietary and Confidential
+ * Written by bermudalocket, 2019.
+ */
 package com.bermudalocket.nerdydragon.util;
-
-// ------------------------------------------------------------------------
 
 import com.google.common.base.Preconditions;
 
