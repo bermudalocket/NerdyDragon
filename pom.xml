@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2019 bermudalocket. All rights reserved.
+  ~ Unauthorized copying or distribution of this item without permission of the author is prohibited.
+  ~ Proprietary and Confidential
+  ~ Created by bermudalocket on 8/23/2019 at 10:0:15.
+  ~ Last modified 8/23/19, 9:59 PM.
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -6,7 +14,7 @@
     <groupId>com.bermudalocket</groupId>
     <name>NerdyDragon</name>
     <artifactId>NerdyDragon</artifactId>
-    <version>2.1.0</version>
+    <version>2.1.2</version>
     <packaging>jar</packaging>
     <description>A custom EnderDragon battle for p.nerd.nu.</description>
     <url>https://github.com/bermudalocket/${project.name}</url>
