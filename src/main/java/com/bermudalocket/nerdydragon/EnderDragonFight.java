@@ -2,7 +2,8 @@
  * Copyright (c) 2019 bermudalocket. All rights reserved.
  * Unauthorized copying or distribution of this item without permission of the author is prohibited.
  * Proprietary and Confidential
- * Written by bermudalocket, 2019.
+ * Created by bermudalocket on 8/25/2019 at 1:58:56.
+ * Last modified 8/25/19, 1:39 PM.
  */
 package com.bermudalocket.nerdydragon;
 
@@ -48,6 +49,7 @@ import org.bukkit.event.entity.EnderDragonChangePhaseEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityUnleashEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.inventory.ItemStack;
@@ -467,6 +469,18 @@ public class EnderDragonFight implements Listener {
             _attackedBy.put(uuid, damage + _attackedBy.get(uuid));
         } else {
             _attackedBy.put(uuid, damage);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    /**
+     * Prevent reinforcements from picking up items. This will prevent
+     * headaches re: picking up player-dropped loot.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onEntityPickupItem(EntityPickupItemEvent e) {
+        if (Util.isReinforcement(e.getEntity())) {
+            e.setCancelled(true);
         }
     }
 
