@@ -2,8 +2,8 @@
  * Copyright (c) 2019 bermudalocket. All rights reserved.
  * Unauthorized copying or distribution of this item without permission of the author is prohibited.
  * Proprietary and Confidential
- * Created by bermudalocket on 8/25/2019 at 1:58:56.
- * Last modified 8/25/19, 1:39 PM.
+ * Created by bermudalocket on 8/25/2019 at 9:15:56.
+ * Last modified 8/25/19, 9:15 PM.
  */
 package com.bermudalocket.nerdydragon;
 
@@ -237,7 +237,7 @@ public class EnderDragonFight implements Listener {
      * due to some balderdash in the vanilla dragon code which occasionally causes
      * the dragon to completely disappear. The vanilla code handles this by
      * summoning a new dragon and re-assigning it in
-     * {@link net.minecraft.server.v1_13_R2.EnderDragonBattle}, so we will do
+     * {@link net.minecraft.server.v1_14_R1.EnderDragonBattle}, so we will do
      * likewise.
      *
      * @param newDragon the new dragon.
