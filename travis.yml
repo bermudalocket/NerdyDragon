@@ -1,0 +1,10 @@
+language: java
+jdk:
+  - oraclejdk8
+before_install:
+  - wget https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
+  - java -jar BuildTools.jar
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - 'work/Minecraft'
