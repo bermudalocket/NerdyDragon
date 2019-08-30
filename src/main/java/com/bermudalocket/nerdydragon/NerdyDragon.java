@@ -2,8 +2,8 @@
  * Copyright (c) 2019 bermudalocket. All rights reserved.
  * Unauthorized copying or distribution of this item without permission of the author is prohibited.
  * Proprietary and Confidential
- * Created by bermudalocket on 8/29/2019 at 9:40:21.
- * Last modified 8/29/19, 9:39 PM.
+ * Created by bermudalocket on _____________________________________
+ * Last modified 8/29/19, 11:24 PM.
  */
 package com.bermudalocket.nerdydragon;
 
@@ -13,6 +13,7 @@ import com.bermudalocket.nerdydragon.commands.LeaderboardCommand;
 import com.bermudalocket.nerdydragon.commands.PluginStateCommand;
 import com.bermudalocket.nerdydragon.commands.ReloadCommand;
 import com.bermudalocket.nerdydragon.leaderboard.FightRecord;
+import com.bermudalocket.nerdydragon.leaderboard.Leaderboard;
 import com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -101,6 +102,7 @@ public class NerdyDragon extends JavaPlugin implements Listener {
             FIGHT.save(serialize);
         } else {
             getConfig().set("saved-fight", null);
+            Leaderboard.getInstance().save();
             saveConfig();
         }
     }
