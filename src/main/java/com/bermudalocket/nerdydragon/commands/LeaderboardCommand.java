@@ -2,11 +2,13 @@
  * Copyright (c) 2019 bermudalocket. All rights reserved.
  * Unauthorized copying or distribution of this item without permission of the author is prohibited.
  * Proprietary and Confidential
- * Written by bermudalocket, 2019.
+ * Created by bermudalocket on 8/29/2019 at 10:11:0.
+ * Last modified 8/29/19, 9:49 PM.
  */
 package com.bermudalocket.nerdydragon.commands;
 
-import com.bermudalocket.nerdydragon.NerdyDragon;
+import com.bermudalocket.nerdydragon.leaderboard.FightContext;
+import com.bermudalocket.nerdydragon.leaderboard.Leaderboard;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
@@ -30,32 +32,29 @@ public class LeaderboardCommand extends ExecutorBase {
 
         if ((args.length == 1 || args.length == 2) && args[0].equalsIgnoreCase("statistics")) {
             if (args.length == 1) {
-                msg(sender, NerdyDragon.LEADERBOARD.getStatistics(null));
+                msg(sender, Leaderboard.getInstance().getStatistics(FightContext.NONE));
                 return true;
             }
-            if (args[1].equalsIgnoreCase("solo")) {
-                msg(sender, NerdyDragon.LEADERBOARD.getStatistics(true));
-            } else if (args[1].equalsIgnoreCase("group")) {
-                msg(sender, NerdyDragon.LEADERBOARD.getStatistics(false));
-            } else {
-                msg(sender, NerdyDragon.LEADERBOARD.getStatistics(null));
-            }
+            FightContext.fromDescriptor(args[1]).ifPresent(context -> {
+                msg(sender, Leaderboard.getInstance().getStatistics(context));
+            });
             return true;
         }
 
         if ((args.length == 2 || args.length == 3) && args[0].equalsIgnoreCase("top")) {
-            int n = 5;
+            int n;
             try {
-                n = Integer.valueOf(args[2]);
-            } catch (Exception e) { }
-            msg(sender, "--------------------------------------");
-            if (args[1].equalsIgnoreCase("solo")) {
-                NerdyDragon.LEADERBOARD.getTop(n, true).forEach(s -> msg(sender, s));
-            } else if (args[1].equalsIgnoreCase("group")) {
-                NerdyDragon.LEADERBOARD.getTop(n, false).forEach(s -> msg(sender, s));
-            } else {
-                NerdyDragon.LEADERBOARD.getTop(n, null).forEach(s -> msg(sender, s));
+                n = Integer.parseInt(args[2]);
+            } catch (Exception e) {
+                n = 5;
             }
+            final int count = n;
+            msg(sender, "--------------------------------------");
+            FightContext.fromDescriptor(args[1]).ifPresent(context -> {
+                Leaderboard.getInstance()
+                           .getTop(count, context)
+                           .forEach(string -> msg(sender, string));
+            });
             return true;
         }
 
