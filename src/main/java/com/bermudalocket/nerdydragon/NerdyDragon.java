@@ -2,7 +2,8 @@
  * Copyright (c) 2019 bermudalocket. All rights reserved.
  * Unauthorized copying or distribution of this item without permission of the author is prohibited.
  * Proprietary and Confidential
- * Written by bermudalocket, 2019.
+ * Created by bermudalocket on 8/29/2019 at 9:40:21.
+ * Last modified 8/29/19, 9:39 PM.
  */
 package com.bermudalocket.nerdydragon;
 
@@ -11,12 +12,14 @@ import com.bermudalocket.nerdydragon.commands.FightCommand;
 import com.bermudalocket.nerdydragon.commands.LeaderboardCommand;
 import com.bermudalocket.nerdydragon.commands.PluginStateCommand;
 import com.bermudalocket.nerdydragon.commands.ReloadCommand;
+import com.bermudalocket.nerdydragon.leaderboard.FightRecord;
 import com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -45,11 +48,9 @@ public class NerdyDragon extends JavaPlugin implements Listener {
      */
     public static Configuration CONFIG;
 
-    /**
-     * Manages the leaderboard: the getting and saving of fight history and
-     * statistics.
-     */
-    public static Leaderboard LEADERBOARD;
+    static {
+        ConfigurationSerialization.registerClass(FightRecord.class, "FightRecord");
+    }
 
     /**
      * The current fight or null if one does not exist.
@@ -68,7 +69,6 @@ public class NerdyDragon extends JavaPlugin implements Listener {
     public void onEnable() {
         PLUGIN = this;
         CONFIG = new Configuration();
-        LEADERBOARD = new Leaderboard();
 
         getServer().getPluginManager().registerEvents(this, this);
 

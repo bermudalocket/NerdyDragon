@@ -2,8 +2,8 @@
  * Copyright (c) 2019 bermudalocket. All rights reserved.
  * Unauthorized copying or distribution of this item without permission of the author is prohibited.
  * Proprietary and Confidential
- * Created by bermudalocket on 8/25/2019 at 9:15:56.
- * Last modified 8/25/19, 9:15 PM.
+ * Created by bermudalocket on 8/29/2019 at 9:40:21.
+ * Last modified 8/29/19, 9:30 PM.
  */
 package com.bermudalocket.nerdydragon;
 
@@ -593,7 +593,7 @@ public class EnderDragonFight implements Listener {
         }
 
         // record this fight into history
-        NerdyDragon.LEADERBOARD.add(this, absoluteDuration, damagePercents);
+        NerdyDragon.LEADERBOARD.addRecord(this, absoluteDuration, damagePercents);
 
         // debug
         _attackedBy.forEach((uuid, dmg) -> {
