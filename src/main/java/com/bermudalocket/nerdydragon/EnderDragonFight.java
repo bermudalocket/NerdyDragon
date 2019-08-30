@@ -2,11 +2,13 @@
  * Copyright (c) 2019 bermudalocket. All rights reserved.
  * Unauthorized copying or distribution of this item without permission of the author is prohibited.
  * Proprietary and Confidential
- * Created by bermudalocket on 8/29/2019 at 9:40:21.
- * Last modified 8/29/19, 9:30 PM.
+ * Created by bermudalocket on 8/29/2019 at 10:12:45.
+ * Last modified 8/29/19, 10:11 PM.
  */
 package com.bermudalocket.nerdydragon;
 
+import com.bermudalocket.nerdydragon.leaderboard.FightRecord;
+import com.bermudalocket.nerdydragon.leaderboard.Leaderboard;
 import com.bermudalocket.nerdydragon.tasks.AbsorbProjectileTask;
 import com.bermudalocket.nerdydragon.tasks.LeavePortalTask;
 import com.bermudalocket.nerdydragon.tasks.RainFireTask;
@@ -593,7 +595,8 @@ public class EnderDragonFight implements Listener {
         }
 
         // record this fight into history
-        NerdyDragon.LEADERBOARD.addRecord(this, absoluteDuration, damagePercents);
+        FightRecord record = new FightRecord(this._id, this._timeStarted, absoluteDuration);
+        Leaderboard.getInstance().addRecord(record);
 
         // debug
         _attackedBy.forEach((uuid, dmg) -> {
